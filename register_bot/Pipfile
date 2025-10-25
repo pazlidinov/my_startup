@@ -9,6 +9,7 @@ aiogram = "==2.14"
 asyncpg = "*"
 django = "*"
 psycopg2-binary = "*"
+pillow = "*"
 
 [dev-packages]
 
