@@ -5,7 +5,7 @@ from .models import *
 # Register your models here.
 @admin.register(Gym)
 class GymAdmin(admin.ModelAdmin):
-    list_display = ["name", "secret_code", "is_active"]
+    list_display = ["name", "secret_code", "balance", "date_and", "is_active"]
     list_display_links = ["name"]
     list_per_page = 10
 
@@ -18,6 +18,7 @@ class ClientAdmin(admin.ModelAdmin):
         "phone_number",
         "role",
         "secret_code",
+        "language",
         "is_active",
     ]
     list_display_links = ["user_name"]
@@ -31,7 +32,7 @@ class PaymentAdmin(admin.ModelAdmin):
         "client",
         "balanse",
         "price",
-        "trainer",
+        "is_trainer",
         "is_active",
     ]
     list_display_links = ["gym", "client"]
@@ -43,7 +44,17 @@ class RegistrationAdmin(admin.ModelAdmin):
     list_display = [
         "gym",
         "client",
+        "is_trainer",
         "payment",
     ]
     list_display_links = ["gym", "client"]
     list_per_page = 50
+
+
+@admin.register(Admin)
+class AdminAdmin(admin.ModelAdmin):
+    list_display = [
+        "user_name",
+        "telegram_id",
+    ]
+    list_display_links = ["user_name"]
