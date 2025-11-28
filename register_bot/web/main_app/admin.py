@@ -10,18 +10,31 @@ class GymAdmin(admin.ModelAdmin):
     list_per_page = 10
 
 
-@admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
+@admin.register(Worker)
+class WorkerAdmin(admin.ModelAdmin):
     list_display = [
-        "user_name",
+        "first_name",
         "telegram_id",
         "phone_number",
-        "role",
         "secret_code",
         "language",
         "is_active",
     ]
-    list_display_links = ["user_name"]
+    list_display_links = ["first_name"]
+    list_per_page = 50
+
+
+@admin.register(Client)
+class ClientAdmin(admin.ModelAdmin):
+    list_display = [
+        "first_name",
+        "telegram_id",
+        "phone_number",
+        "secret_code",
+        "language",
+        "is_active",
+    ]
+    list_display_links = ["first_name"]
     list_per_page = 50
 
 
