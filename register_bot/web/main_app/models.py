@@ -105,6 +105,8 @@ class Admin(models.Model):
     telegram_id = models.CharField(unique=True, max_length=20)
     free_days = models.PositiveIntegerField(default=0)
     amount = models.PositiveIntegerField(default=0)
+    card_name=models.CharField(max_length=200)
+    card_number=models.CharField(max_length=16)
 
     def __str__(self):
         return self.user_name
