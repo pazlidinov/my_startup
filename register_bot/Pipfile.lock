@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "455e051197985bc28feee95de8d5d06b2549ccb723cbeaaff0eb4584beb66bfd"
+            "sha256": "6b3b479523ce6625f150ee8cf6307f2265b480b07f48ef4844d15b5c62957250"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -280,6 +280,14 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==2025.8.3"
+        },
+        "colorama": {
+            "hashes": [
+                "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44",
+                "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"
+            ],
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6'",
+            "version": "==0.4.6"
         },
         "django": {
             "hashes": [
@@ -827,6 +835,15 @@
             ],
             "markers": "python_version >= '3.9'",
             "version": "==1.1.1"
+        },
+        "qrcode": {
+            "hashes": [
+                "sha256:16e64e0716c14960108e85d853062c9e8bba5ca8252c0b4d0231b9df4060ff4f",
+                "sha256:35c3f2a4172b33136ab9f6b3ef1c00260dd2f66f858f24d88418a015f446506c"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.9' and python_version < '4.0'",
+            "version": "==8.2"
         },
         "sqlparse": {
             "hashes": [

@@ -34,9 +34,7 @@ class Worker(models.Model):
     last_name = models.CharField(max_length=66, blank=True, null=True)
     telegram_id = models.CharField(unique=True, max_length=20)
     phone_number = models.CharField(max_length=25)
-    language = models.CharField(choices=Languages, max_length=25)
-    secret_code = models.CharField(unique=True, max_length=10)
-    qr_code = models.ImageField(upload_to="worker_img")
+    language = models.CharField(choices=Languages, max_length=25)   
     is_director = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 

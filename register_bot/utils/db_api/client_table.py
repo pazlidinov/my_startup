@@ -76,8 +76,8 @@ class ClientDatabase:
             execute=True,
         )
 
-    def select_user(self, **kwargs):
+    async def select_client(self, **kwargs):
         # SQL_EXAMPLE = "SELECT * FROM Users where id=1 AND Name='John'"
-        sql = "SELECT * FROM Customers WHERE "
+        sql = "SELECT * FROM main_app_client WHERE "
         sql, parameters = self.format_args(sql, kwargs)
-        return self.execute(sql, parameters=parameters, fetchone=True)
+        return self.execute(sql, parameters=parameters, fetchrow=True)

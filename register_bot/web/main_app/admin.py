@@ -15,8 +15,7 @@ class WorkerAdmin(admin.ModelAdmin):
     list_display = [
         "first_name",
         "telegram_id",
-        "phone_number",
-        "secret_code",
+        "phone_number",        
         "language",
         "is_active",
     ]

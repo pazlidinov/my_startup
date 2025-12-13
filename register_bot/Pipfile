@@ -10,6 +10,7 @@ asyncpg = "*"
 django = "*"
 psycopg2-binary = "*"
 pillow = "*"
+qrcode = "*"
 
 [dev-packages]
 
