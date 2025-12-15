@@ -17,7 +17,7 @@ class Gym(models.Model):
     qr_code = models.ImageField(upload_to="gym_img")
     lump_sum = models.PositiveIntegerField(default=0)
     lump_trainer_sum = models.PositiveIntegerField(default=0, blank=True, null=True)
-    balance = models.PositiveSmallIntegerField
+    balance = models.BigIntegerField(default=0)
     date_and = models.DateField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
 

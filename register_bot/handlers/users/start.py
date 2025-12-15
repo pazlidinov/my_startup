@@ -6,6 +6,8 @@ from keyboards.inline.langsKeyboard import langs
 from keyboards.inline.roleKeyboard import roles
 from keyboards.default.contact import contact_btn
 from states.clientData import Client
+from utils.others.secret_code import generate_code
+from utils.others.qr_code import generate_qr_code
 import logging
 
 
@@ -64,31 +66,19 @@ async def contact_stage(message: types.Message, state: FSMContext):
     await Client.role.set()
 
 
-@dp.callback_query_handler(state=Client.role)
-async def lang_stage(call: types.CallbackQuery, state: FSMContext):
-    await call.message.delete()
-
-    role = call.data
-    print(type(role))
-    if role == "director":
-        await call.message.answer("director")
-    elif role == "worker":
-        await call.message.answer("worker")
-    elif role == "client":
-        await call.message.answer("client")
-    else:
-        await call.message.answer("NO")
-
-    # # Ma'limotlarni qayta o'qish
-    # data = await state.get_data()
-    # user_name = data.get("user_name")
-    # first_name = data.get("first_name")
-    # last_name = data.get("last_name")
-    # telegram_id = data.get("telegram_id")
-    # phone_number = data.get("phone_number")
-    # language = data.get("language")
-    # secret_code = "123"
-    # qr_code = "///"
+@dp.callback_query_handler(lambda c: c.data == "client", state=Client.role)
+async def add_handler(call: types.CallbackQuery, state: FSMContext):
+    await call.message.answer("Ro'yhatdan o'tish amalga oshirilmoqda...")
+    # Ma'limotlarni qayta o'qish
+    data = await state.get_data()
+    user_name = data.get("user_name")
+    first_name = data.get("first_name")
+    last_name = data.get("last_name")
+    telegram_id = data.get("telegram_id")
+    phone_number = data.get("phone_number")
+    language = data.get("language")
+    secret_code = await generate_code(10)
+    qr_code = generate_qr_code(telegram_id, secret_code)
 
     # try:
     #     await client_db.add_client(

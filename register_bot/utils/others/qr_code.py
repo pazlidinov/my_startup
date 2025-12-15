@@ -1,9 +1,9 @@
+import os
 import qrcode
-from secret_code import generate_code
 
 
 # QR kodni yaratish
-def generate_qr_code(telegram_id):
+def generate_qr_code(telegram_id, secret_code):
     qr = qrcode.QRCode(
         version=5,  # kod o'lchami (1–40)
         error_correction=qrcode.constants.ERROR_CORRECT_L,  # xatolarni tuzatish darajasi
@@ -12,13 +12,11 @@ def generate_qr_code(telegram_id):
     )
 
     # QR kodga aylantirmoqchi bo'lgan ma'lumot
-    qr.add_data(f"{telegram_id}/{generate_code()}")
+    qr.add_data(f"{telegram_id}/{secret_code}")
     qr.make(fit=True)
 
     # QR kodni rasm sifatida saqlash
     img = qr.make_image(fill_color="black", back_color="white")
     img.save(f"../../qr_code_img/client_img/{telegram_id}.jpg")
 
-
-if __name__ == "__main__":
-    generate_qr_code(6)
+    return os.path.abspath(f"../../qr_code_img/client_img/{telegram_id}.jpg")
