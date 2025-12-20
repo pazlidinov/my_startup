@@ -21,7 +21,7 @@ class ClientDatabase:
     async def execute(
         self,
         command,
-        *args: tuple,
+        *args,
         fetch: bool = False,
         fetchval: bool = False,
         fetchrow: bool = False,
@@ -42,7 +42,9 @@ class ClientDatabase:
 
     @staticmethod
     def format_args(sql, parameters: dict):
-        sql += " AND ".join([f"{item} = ?" for item in parameters])
+        sql += " AND ".join(
+            [f"{item} = ${i}" for i, item in enumerate(parameters, start=1)]
+        )
         return sql, tuple(parameters.values())
 
     async def add_client(
@@ -55,7 +57,7 @@ class ClientDatabase:
         language: str,
         secret_code: str,
         qr_code: str,
-        is_active:bool=True,
+        is_active: bool = True,
     ):
         # SQL_EXAMPLE = "INSERT INTO Users(id, name, surname, username, phone) VALUES(1, 'John', 'Smith', 'jsmith', '+1234567890')"
 
@@ -80,4 +82,7 @@ class ClientDatabase:
         # SQL_EXAMPLE = "SELECT * FROM Users where id=1 AND Name='John'"
         sql = "SELECT * FROM main_app_client WHERE "
         sql, parameters = self.format_args(sql, kwargs)
-        return self.execute(sql, parameters=parameters, fetchrow=True)
+        return await self.execute(sql, *parameters, fetchrow=True)
+
+
+client_db = ClientDatabase()

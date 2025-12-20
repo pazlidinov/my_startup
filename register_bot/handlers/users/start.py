@@ -1,4 +1,4 @@
-from loader import bot, dp, client_db
+from loader import bot, dp
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart
@@ -8,6 +8,7 @@ from keyboards.default.contact import contact_btn
 from states.clientData import Client
 from utils.others.secret_code import generate_code
 from utils.others.qr_code import generate_qr_code
+from utils.db_api.client_table import client_db
 import logging
 
 
