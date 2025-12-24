@@ -10,6 +10,7 @@ from utils.others.secret_code import generate_code
 from utils.others.qr_code import generate_qr_code
 from utils.db_api.client_table import client_db
 import logging
+import asyncio
 
 
 @dp.message_handler(CommandStart())
@@ -69,7 +70,9 @@ async def contact_stage(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(lambda c: c.data == "client", state=Client.role)
 async def add_handler(call: types.CallbackQuery, state: FSMContext):
-    await call.message.answer("Ro'yhatdan o'tish amalga oshirilmoqda...")
+    await call.message.delete()
+    last_msg = await call.message.answer("Ro'yhatdan o'tish amalga oshirilmoqda...")
+
     # Ma'limotlarni qayta o'qish
     data = await state.get_data()
     user_name = data.get("user_name")
@@ -81,24 +84,32 @@ async def add_handler(call: types.CallbackQuery, state: FSMContext):
     secret_code = await generate_code(10)
     qr_code = generate_qr_code(telegram_id, secret_code)
 
-    # try:
-    #     await client_db.add_client(
-    #         user_name=user_name,
-    #         first_name=first_name,
-    #         last_name=last_name,
-    #         telegram_id=str(telegram_id),
-    #         phone_number=phone_number,
-    #         language=language,
-    #         secret_code=secret_code,
-    #         qr_code=qr_code,
-    #     )
-    #     await message.answer(
-    #         "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz",
-    #         reply_markup=types.ReplyKeyboardRemove(),
-    #     )
+    # Yangi foydalanuvchi DB ga qo'shish
+    try:
+        await client_db.add_client(
+            user_name=user_name,
+            first_name=first_name,
+            last_name=last_name,
+            telegram_id=str(telegram_id),
+            phone_number=phone_number,
+            language=language,
+            secret_code=secret_code,
+            qr_code=qr_code,
+        )
+        await bot.delete_message(
+            chat_id=call.message.chat.id, message_id=last_msg.message_id
+        )
+        last_msg = await call.message.answer(
+            "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz"
+        )
+    except Exception as err:
+        logging.exception(err)
+        last_msg = await call.message.answer(
+            "Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+        )
 
-    # except Exception as err:
-    #     logging.exception(err)
-
-    # await state.finish()
-    # return
+    await asyncio.sleep(5)
+    await bot.delete_message(
+        chat_id=call.message.chat.id, message_id=last_msg.message_id
+    )
+    await state.finish()

@@ -1,9 +1,32 @@
 import os
 import qrcode
+from pathlib import Path
+
+
+# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# MEDIA_DIR = os.path.join(BASE_DIR, "qr_code_img")
+
+# os.makedirs(MEDIA_DIR, exist_ok=True)
+
+
+# def save_qr(img, filename):
+#     file_path = os.path.join(MEDIA_DIR, filename)
+#     img.save(file_path)
+#     return file_path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+MEDIA_DIR = BASE_DIR / "qr_code_img" 
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def save_qr(img, name: str):
+    path = MEDIA_DIR / name
+    img.save(path)
+    return str(path)
 
 
 # QR kodni yaratish
-def generate_qr_code(telegram_id, secret_code, file):
+def generate_qr_code(telegram_id, secret_code):
     qr = qrcode.QRCode(
         version=5,  # kod o'lchami (1–40)
         error_correction=qrcode.constants.ERROR_CORRECT_L,  # xatolarni tuzatish darajasi
@@ -17,6 +40,4 @@ def generate_qr_code(telegram_id, secret_code, file):
 
     # QR kodni rasm sifatida saqlash
     img = qr.make_image(fill_color="black", back_color="white")
-    img.save(f"../../qr_code_img/{file}/{telegram_id}.jpg")
-
-    return os.path.abspath(f"../../qr_code_img/{file}/{telegram_id}.jpg")
+    return save_qr(img, f"{telegram_id}.png")
