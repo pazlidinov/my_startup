@@ -5,10 +5,12 @@ import middlewares, filters, handlers
 from utils.notify_admins import on_startup_notify
 from utils.set_bot_commands import set_default_commands
 from utils.db_api.client_table import client_db
+from utils.db_api.worker_table import worker_db
 
 
 async def on_startup(dispatcher):
     await client_db.create()
+    await worker_db.create()
 
     # Birlamchi komandalar (/star va /help)
     await set_default_commands(dispatcher)

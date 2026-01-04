@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import mark_safe
 from .models import *
 
 
@@ -15,7 +16,7 @@ class WorkerAdmin(admin.ModelAdmin):
     list_display = [
         "first_name",
         "telegram_id",
-        "phone_number",        
+        "phone_number",
         "language",
         "is_active",
     ]
@@ -31,11 +32,12 @@ class ClientAdmin(admin.ModelAdmin):
         "phone_number",
         "secret_code",
         "language",
-        "is_active",
+        "is_active",       
+        "qr_code",
     ]
     list_display_links = ["first_name"]
     list_per_page = 50
-
+    
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):

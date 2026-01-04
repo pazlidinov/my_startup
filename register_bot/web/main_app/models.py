@@ -14,7 +14,7 @@ class Gym(models.Model):
     loc_lat = models.FloatField()
     loc_long = models.FloatField()
     secret_code = models.CharField(unique=True, max_length=10)
-    qr_code = models.ImageField(upload_to="gym_img")
+    qr_code = models.ImageField()
     lump_sum = models.PositiveIntegerField(default=0)
     lump_trainer_sum = models.PositiveIntegerField(default=0, blank=True, null=True)
     balance = models.BigIntegerField(default=0)
@@ -50,7 +50,7 @@ class Client(models.Model):
     phone_number = models.CharField(max_length=25)
     language = models.CharField(choices=Languages, max_length=25)
     secret_code = models.CharField(unique=True, max_length=10)
-    qr_code = models.ImageField(upload_to="client_img")
+    qr_code = models.ImageField()
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

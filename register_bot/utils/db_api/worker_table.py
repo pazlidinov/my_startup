@@ -5,7 +5,7 @@ from asyncpg.pool import Pool
 from data import config
 
 
-class ClientDatabase:
+class WorkerDatabase:
     def __init__(self):
         self.pool: Union[Pool, None] = None
 
@@ -47,7 +47,7 @@ class ClientDatabase:
         )
         return sql, tuple(parameters.values())
 
-    async def add_client(
+    async def add_worker(
         self,
         user_name: str,
         first_name: str,
@@ -55,14 +55,13 @@ class ClientDatabase:
         telegram_id: str,
         phone_number: str,
         language: str,
-        secret_code: str,
-        qr_code: str,
+        is_director: bool = False,
         is_active: bool = True,
     ):
-        # SQL_EXAMPLE = "INSERT INTO main_app_client(id, name, surname, username, phone) VALUES(1, 'John', 'Smith', 'jsmith', '+1234567890')"
+        # SQL_EXAMPLE = "INSERT INTO main_app_worker(id, name, surname, username, phone) VALUES(1, 'John', 'Smith', 'jsmith', '+1234567890')"
 
         sql = """
-        INSERT INTO main_app_client (user_name, first_name, last_name, telegram_id, phone_number, language, secret_code, qr_code, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO main_app_worker (user_name, first_name, last_name, telegram_id, phone_number, language, is_director, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         """
         return await self.execute(
             sql,
@@ -72,17 +71,16 @@ class ClientDatabase:
             telegram_id,
             phone_number,
             language,
-            secret_code,
-            qr_code,
+            is_director,
             is_active,
             execute=True,
         )
 
-    async def select_client(self, **kwargs):
-        # SQL_EXAMPLE = "SELECT * FROM main_app_client where id=1 AND Name='John'"
-        sql = "SELECT * FROM main_app_client WHERE "
+    async def select_worker(self, **kwargs):
+        # SQL_EXAMPLE = "SELECT * FROM main_app_worker where id=1 AND Name='John'"
+        sql = "SELECT * FROM main_app_worker WHERE "
         sql, parameters = self.format_args(sql, kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
 
 
-client_db = ClientDatabase()
+worker_db = WorkerDatabase()

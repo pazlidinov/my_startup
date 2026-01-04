@@ -9,6 +9,7 @@ from states.clientData import Client
 from utils.others.secret_code import generate_code
 from utils.others.qr_code import generate_qr_code
 from utils.db_api.client_table import client_db
+from utils.db_api.worker_table import worker_db
 import logging
 import asyncio
 
@@ -95,6 +96,49 @@ async def add_handler(call: types.CallbackQuery, state: FSMContext):
             language=language,
             secret_code=secret_code,
             qr_code=qr_code,
+        )
+        await bot.delete_message(
+            chat_id=call.message.chat.id, message_id=last_msg.message_id
+        )
+        last_msg = await call.message.answer(
+            "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz"
+        )
+    except Exception as err:
+        logging.exception(err)
+        last_msg = await call.message.answer(
+            "Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+        )
+
+    await asyncio.sleep(5)
+    await bot.delete_message(
+        chat_id=call.message.chat.id, message_id=last_msg.message_id
+    )
+    await state.finish()
+
+
+@dp.callback_query_handler(lambda c: c.data == "worker", state=Client.role)
+async def add_handler(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    last_msg = await call.message.answer("Ro'yhatdan o'tish amalga oshirilmoqda...")
+
+    # Ma'limotlarni qayta o'qish
+    data = await state.get_data()
+    user_name = data.get("user_name")
+    first_name = data.get("first_name")
+    last_name = data.get("last_name")
+    telegram_id = data.get("telegram_id")
+    phone_number = data.get("phone_number")
+    language = data.get("language")
+
+    # Yangi hodim DB ga qo'shish
+    try:
+        await worker_db.add_worker(
+            user_name=user_name,
+            first_name=first_name,
+            last_name=last_name,
+            telegram_id=str(telegram_id),
+            phone_number=phone_number,
+            language=language,
         )
         await bot.delete_message(
             chat_id=call.message.chat.id, message_id=last_msg.message_id
