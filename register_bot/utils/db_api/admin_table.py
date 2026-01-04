@@ -3,9 +3,11 @@ import asyncpg
 from asyncpg import Connection
 from asyncpg.pool import Pool
 from data import config
+from datetime import date
+from typing import Optional
 
 
-class WorkerDatabase:
+class AdminDatabase:
     def __init__(self):
         self.pool: Union[Pool, None] = None
 
@@ -47,42 +49,12 @@ class WorkerDatabase:
         )
         return sql, tuple(parameters.values())
 
-    async def add_worker(
-        self,
-        gym: int,
-        user_name: str,
-        first_name: str,
-        last_name: str,
-        telegram_id: str,
-        phone_number: str,
-        language: str,
-        is_director: bool = False,
-        is_active: bool = True,
-    ):
-        # SQL_EXAMPLE = "INSERT INTO main_app_worker(id, name, surname, username, phone) VALUES(1, 'John', 'Smith', 'jsmith', '+1234567890')"
-
-        sql = """
-        INSERT INTO main_app_worker (gym, user_name, first_name, last_name, telegram_id, phone_number, language, is_director, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        """
-        return await self.execute(
-            sql,
-            gym,
-            user_name,
-            first_name,
-            last_name,
-            telegram_id,
-            phone_number,
-            language,
-            is_director,
-            is_active,
-            execute=True,
-        )
-
-    async def select_worker(self, **kwargs):
-        # SQL_EXAMPLE = "SELECT * FROM main_app_worker where id=1 AND Name='John'"
-        sql = "SELECT * FROM main_app_worker WHERE "
+    async def select_admin(self, column, **kwargs):
+        # SQL_EXAMPLE = "SELECT column FROM main_app_admin where id=1 AND Name='John'"
+        sql = f"SELECT {column} FROM main_app_admin WHERE "
         sql, parameters = self.format_args(sql, kwargs)
-        return await self.execute(sql, *parameters, fetchrow=True)
+        sql += " LIMIT 1"
+        return await self.execute(sql, *parameters, fetchval=True)
 
 
-worker_db = WorkerDatabase()
+admin_db = AdminDatabase()

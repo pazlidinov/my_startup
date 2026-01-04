@@ -5,3 +5,8 @@ class Client(StatesGroup):
     lang = State()
     phone_number = State()
     role = State()
+    name = State()
+    location = State()
+    lump_sum = State()
+   
+    

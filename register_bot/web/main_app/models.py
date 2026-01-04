@@ -16,9 +16,9 @@ class Gym(models.Model):
     secret_code = models.CharField(unique=True, max_length=10)
     qr_code = models.ImageField()
     lump_sum = models.PositiveIntegerField(default=0)
-    lump_trainer_sum = models.PositiveIntegerField(default=0, blank=True, null=True)
+    # lump_trainer_sum = models.PositiveIntegerField(default=0, blank=True, null=True)
     balance = models.BigIntegerField(default=0)
-    date_and = models.DateField(blank=True, null=True)
+    date_end = models.DateField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

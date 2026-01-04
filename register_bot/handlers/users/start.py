@@ -5,11 +5,13 @@ from aiogram.dispatcher.filters.builtin import CommandStart
 from keyboards.inline.langsKeyboard import langs
 from keyboards.inline.roleKeyboard import roles
 from keyboards.default.contact import contact_btn
+from keyboards.default.location import location_btn
 from states.clientData import Client
 from utils.others.secret_code import generate_code
 from utils.others.qr_code import generate_qr_code
 from utils.db_api.client_table import client_db
 from utils.db_api.worker_table import worker_db
+from utils.db_api.gym_table import gym_db
 import logging
 import asyncio
 
@@ -70,90 +72,175 @@ async def contact_stage(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query_handler(lambda c: c.data == "client", state=Client.role)
-async def add_handler(call: types.CallbackQuery, state: FSMContext):
+async def for_client(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
-    last_msg = await call.message.answer("Ro'yhatdan o'tish amalga oshirilmoqda...")
 
     # Ma'limotlarni qayta o'qish
     data = await state.get_data()
-    user_name = data.get("user_name")
-    first_name = data.get("first_name")
-    last_name = data.get("last_name")
-    telegram_id = data.get("telegram_id")
-    phone_number = data.get("phone_number")
-    language = data.get("language")
     secret_code = await generate_code(10)
-    qr_code = generate_qr_code(telegram_id, secret_code)
+    qr_code = generate_qr_code(data.get("telegram_id"), secret_code)
 
     # Yangi foydalanuvchi DB ga qo'shish
     try:
         await client_db.add_client(
-            user_name=user_name,
-            first_name=first_name,
-            last_name=last_name,
-            telegram_id=str(telegram_id),
-            phone_number=phone_number,
-            language=language,
+            user_name=data.get("user_name"),
+            first_name=data.get("first_name"),
+            last_name=data.get("last_name"),
+            telegram_id=str(data.get("telegram_id")),
+            phone_number=data.get("phone_number"),
+            language=data.get("language"),
             secret_code=secret_code,
             qr_code=qr_code,
         )
-        await bot.delete_message(
-            chat_id=call.message.chat.id, message_id=last_msg.message_id
-        )
-        last_msg = await call.message.answer(
-            "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz"
+        await call.answer(
+            "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
         )
     except Exception as err:
         logging.exception(err)
-        last_msg = await call.message.answer(
-            "Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+        await call.answer(
+            "Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
         )
 
-    await asyncio.sleep(5)
-    await bot.delete_message(
-        chat_id=call.message.chat.id, message_id=last_msg.message_id
-    )
     await state.finish()
 
 
 @dp.callback_query_handler(lambda c: c.data == "worker", state=Client.role)
-async def add_handler(call: types.CallbackQuery, state: FSMContext):
+async def for_worker(call: types.CallbackQuery, state: FSMContext):
     await call.message.delete()
     last_msg = await call.message.answer("Ro'yhatdan o'tish amalga oshirilmoqda...")
 
     # Ma'limotlarni qayta o'qish
     data = await state.get_data()
-    user_name = data.get("user_name")
-    first_name = data.get("first_name")
-    last_name = data.get("last_name")
-    telegram_id = data.get("telegram_id")
-    phone_number = data.get("phone_number")
-    language = data.get("language")
 
     # Yangi hodim DB ga qo'shish
     try:
         await worker_db.add_worker(
-            user_name=user_name,
-            first_name=first_name,
-            last_name=last_name,
-            telegram_id=str(telegram_id),
-            phone_number=phone_number,
-            language=language,
+            user_name=data.get("user_name"),
+            first_name=data.get("first_name"),
+            last_name=data.get("last_name"),
+            telegram_id=str(data.get("telegram_id")),
+            phone_number=data.get("phone_number"),
+            language=data.get("language"),
         )
         await bot.delete_message(
             chat_id=call.message.chat.id, message_id=last_msg.message_id
         )
-        last_msg = await call.message.answer(
-            "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz"
+        await call.answer(
+            "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
         )
     except Exception as err:
         logging.exception(err)
-        last_msg = await call.message.answer(
+        await bot.delete_message(
+            chat_id=call.message.chat.id, message_id=last_msg.message_id
+        )
+        await call.answer(
+            "Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
+        )
+    await state.finish()
+
+
+@dp.callback_query_handler(lambda c: c.data == "director", state=Client.role)
+async def name_stage(call: types.CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    last_msg = await call.message.answer("Sport zalingizning nomini kiriting...")
+    await state.update_data(last_msg_id=last_msg.message_id)
+    await Client.name.set()
+
+
+@dp.message_handler(state=Client.name)
+async def name_stage(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    last_msg_id = data.get("last_msg_id")
+    await bot.delete_message(chat_id=message.chat.id, message_id=last_msg_id)
+
+    await state.update_data(gym_name=message.text)
+    await message.delete()
+
+    last_msg = await message.answer(
+        "Iltimos, joylashuvingizni yuboring\n⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬",
+        reply_markup=location_btn,
+    )
+    await state.update_data(last_msg_id=last_msg.message_id)
+    await Client.location.set()
+
+
+@dp.message_handler(content_types=["location"], state=Client.location)
+async def get_location(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    last_msg_id = data.get("last_msg_id")
+    await bot.delete_message(chat_id=message.chat.id, message_id=last_msg_id)
+    await message.delete()
+
+    lat = message.location.latitude
+    lon = message.location.longitude
+    await state.update_data({"loc_lat": lat})
+    await state.update_data({"loc_long": lon})
+
+    last_msg = await message.answer("Iltimos, bir kunlik to'lov miqdorini kiriting...")
+    await state.update_data(last_msg_id=last_msg.message_id)
+
+    await Client.lump_sum.set()
+
+
+@dp.message_handler(state=Client.lump_sum)
+async def lump_sum(message: types.Message, state: FSMContext):
+    text = message.text.strip()
+
+    data = await state.get_data()
+    last_msg_id = data.get("last_msg_id")
+    await bot.delete_message(chat_id=message.chat.id, message_id=last_msg_id)
+    await message.delete()
+
+    # ❌ Agar int bo‘lmasa, qayta so‘rash
+    if not text.isdigit():
+        await message.answer("❌ Iltimos, faqat **butun son** kiriting!")
+        await message.delete()
+        return
+
+    # ✅ Raqamni int ga aylantiramiz
+    amount = int(text)
+
+    # Optional: minimal / maksimal cheklov
+    MIN_AMOUNT = 1
+    MAX_AMOUNT = 2147483647
+    if amount < MIN_AMOUNT or amount > MAX_AMOUNT:
+        await message.answer(
+            f"❌ Miqdor {MIN_AMOUNT}-{MAX_AMOUNT} oralig‘ida bo‘lishi kerak!"
+        )
+        await message.delete()
+        return
+
+    secret_code = await generate_code(10)
+    qr_code = generate_qr_code(data.get("telegram_id"), secret_code)
+
+    # Yangi hodim DB ga qo'shish
+    try:
+        new_gym_id = await gym_db.add_gym(
+            name=data.get("gym_name"),
+            loc_lat=data.get("loc_lat"),
+            loc_long=data.get("loc_long"),
+            secret_code=secret_code,
+            qr_code=qr_code,
+            lump_sum=amount,
+        )
+        await worker_db.add_worker(
+            gym=new_gym_id,
+            user_name=data.get("user_name"),
+            first_name=data.get("first_name"),
+            last_name=data.get("last_name"),
+            telegram_id=str(data.get("telegram_id")),
+            phone_number=data.get("phone_number"),
+            language=data.get("language"),
+            is_director=True,
+        )
+        last_msg = await message.answer(
+            "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz."
+        )
+    except Exception as err:
+        logging.exception(err)
+        last_msg = await message.answer(
             "Xatolik yuz berdi, iltimos qayta urinib ko'ring."
         )
-
-    await asyncio.sleep(5)
-    await bot.delete_message(
-        chat_id=call.message.chat.id, message_id=last_msg.message_id
-    )
+    await asyncio.sleep(10)
+    await bot.delete_message(chat_id=message.chat.id, message_id=last_msg.message_id)
     await state.finish()

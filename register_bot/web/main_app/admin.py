@@ -6,7 +6,7 @@ from .models import *
 # Register your models here.
 @admin.register(Gym)
 class GymAdmin(admin.ModelAdmin):
-    list_display = ["name", "secret_code", "balance", "date_and", "is_active"]
+    list_display = ["name", "secret_code", "balance", "date_end", "is_active"]
     list_display_links = ["name"]
     list_per_page = 10
 
