@@ -3,16 +3,8 @@ import qrcode
 from pathlib import Path
 
 
-# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# MEDIA_DIR = os.path.join(BASE_DIR, "qr_code_img")
-
-# os.makedirs(MEDIA_DIR, exist_ok=True)
 
 
-# def save_qr(img, filename):
-#     file_path = os.path.join(MEDIA_DIR, filename)
-#     img.save(file_path)
-#     return file_path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MEDIA_DIR = BASE_DIR / "qr_code_img" 

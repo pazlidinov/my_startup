@@ -4,17 +4,12 @@ from loader import dp
 import middlewares, filters, handlers
 from utils.notify_admins import on_startup_notify
 from utils.set_bot_commands import set_default_commands
-from utils.db_api.client_table import client_db
-from utils.db_api.worker_table import worker_db
-from utils.db_api.gym_table import gym_db
-from utils.db_api.admin_table import admin_db
+from utils.db_api.database import all_tables
+from asyncpg import Pool
 
 
 async def on_startup(dispatcher):
-    await client_db.create()
-    await worker_db.create()
-    await gym_db.create()
-    await admin_db.create()
+    await all_tables.connect()
 
     # Birlamchi komandalar (/star va /help)
     await set_default_commands(dispatcher)

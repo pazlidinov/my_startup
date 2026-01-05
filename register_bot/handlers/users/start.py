@@ -1,17 +1,14 @@
+from datetime import datetime, timedelta
 from loader import bot, dp
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart
-from keyboards.inline.langsKeyboard import langs
-from keyboards.inline.roleKeyboard import roles
-from keyboards.default.contact import contact_btn
-from keyboards.default.location import location_btn
+from keyboards.inline import langsKeyboard, roleKeyboard, menu_client, menu_gym
+from keyboards.default import contact, location
 from states.clientData import Client
 from utils.others.secret_code import generate_code
 from utils.others.qr_code import generate_qr_code
-from utils.db_api.client_table import client_db
-from utils.db_api.worker_table import worker_db
-from utils.db_api.gym_table import gym_db
+from utils.db_api.database import all_tables as db
 import logging
 import asyncio
 
@@ -23,7 +20,7 @@ async def bot_start(message: types.Message):
         "🇺🇿Hurmatli mijoz, kerakli tilni tanlang!\n"
         "🇺🇿Ҳурматли мижоз, керакли тилни танланг!\n"
         "🇷🇺Уважаемый клиент, пожалуйста, выберите нужный язык!",
-        reply_markup=langs,
+        reply_markup=langsKeyboard.langs,
     )
     await Client.lang.set()
 
@@ -44,7 +41,7 @@ async def lang_stage(call: types.CallbackQuery, state: FSMContext):
 
     last_msg = await call.message.answer(
         "Pastki tugma orqali telefon raqamingizni kiriting\n⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬",
-        reply_markup=contact_btn,
+        reply_markup=contact.contact_btn,
     )
     await state.update_data(last_msg_id=last_msg.message_id)
     await Client.phone_number.set()
@@ -66,7 +63,7 @@ async def contact_stage(message: types.Message, state: FSMContext):
 
     await message.answer(
         "Botdan foydalanish turini tanlang...",
-        reply_markup=roles,
+        reply_markup=roleKeyboard.roles,
     )
     await Client.role.set()
 
@@ -82,7 +79,7 @@ async def for_client(call: types.CallbackQuery, state: FSMContext):
 
     # Yangi foydalanuvchi DB ga qo'shish
     try:
-        await client_db.add_client(
+        await db.add_client(
             user_name=data.get("user_name"),
             first_name=data.get("first_name"),
             last_name=data.get("last_name"),
@@ -95,6 +92,7 @@ async def for_client(call: types.CallbackQuery, state: FSMContext):
         await call.answer(
             "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
         )
+        await call.message.answer(reply_markup=menu_client.client_main_menu)
     except Exception as err:
         logging.exception(err)
         await call.answer(
@@ -114,7 +112,7 @@ async def for_worker(call: types.CallbackQuery, state: FSMContext):
 
     # Yangi hodim DB ga qo'shish
     try:
-        await worker_db.add_worker(
+        await db.add_worker(
             user_name=data.get("user_name"),
             first_name=data.get("first_name"),
             last_name=data.get("last_name"),
@@ -158,7 +156,7 @@ async def name_stage(message: types.Message, state: FSMContext):
 
     last_msg = await message.answer(
         "Iltimos, joylashuvingizni yuboring\n⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬⏬",
-        reply_markup=location_btn,
+        reply_markup=location.location_btn,
     )
     await state.update_data(last_msg_id=last_msg.message_id)
     await Client.location.set()
@@ -212,18 +210,22 @@ async def lump_sum(message: types.Message, state: FSMContext):
 
     secret_code = await generate_code(10)
     qr_code = generate_qr_code(data.get("telegram_id"), secret_code)
+    free_day = await db.select_admin(column="free_days")
+    today = datetime.today().date()
+    after_free_days = today + timedelta(days=free_day)
 
     # Yangi hodim DB ga qo'shish
     try:
-        new_gym_id = await gym_db.add_gym(
+        new_gym_id = await db.add_gym(
             name=data.get("gym_name"),
             loc_lat=data.get("loc_lat"),
             loc_long=data.get("loc_long"),
             secret_code=secret_code,
             qr_code=qr_code,
             lump_sum=amount,
+            date_end=after_free_days,
         )
-        await worker_db.add_worker(
+        await db.add_worker(
             gym=new_gym_id,
             user_name=data.get("user_name"),
             first_name=data.get("first_name"),
@@ -243,4 +245,5 @@ async def lump_sum(message: types.Message, state: FSMContext):
         )
     await asyncio.sleep(10)
     await bot.delete_message(chat_id=message.chat.id, message_id=last_msg.message_id)
+    await message.answer(reply_markup=menu_gym.gym_main_menu)
     await state.finish()
