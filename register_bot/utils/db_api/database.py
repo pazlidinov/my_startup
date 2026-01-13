@@ -43,8 +43,8 @@ class AllTables:
                 return result
 
     @staticmethod
-    def format_args(sql, parameters: dict):
-        sql += " AND ".join(
+    def format_args(sql, addition: str, parameters: dict):
+        sql += addition.join(
             [f"{item} = ${i}" for i, item in enumerate(parameters, start=1)]
         )
         return sql, tuple(parameters.values())
@@ -83,20 +83,23 @@ class AllTables:
     async def select_client(self, **kwargs):
         # SQL_EXAMPLE = "SELECT * FROM main_app_client where id=1 AND Name='John'"
         sql = "SELECT * FROM main_app_client WHERE "
-        sql, parameters = self.format_args(sql, kwargs)
+        sql, parameters = self.format_args(sql, " AND ", kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
 
-    async def update_client(self, secret_code: str, qr_code: str, telegram_id: str):
+    async def update_client(self, telegram_id, **kwargs):
         sql = """
         UPDATE main_app_client
-        SET secret_code = $1,
-            qr_code = $2
-        WHERE telegram_id = $3
-        """
+        SET """
+        sql, parameters = (
+            self.format_args(sql, ", ", kwargs)
+            if len(kwargs) > 1
+            else self.format_args(sql, "", kwargs)
+        )
+        sql += f" WHERE telegram_id = ${len(kwargs)+1}"
+
         return await self.execute(
             sql,
-            secret_code,
-            qr_code,
+            *parameters,
             telegram_id,
             execute=True,
         )
@@ -135,7 +138,7 @@ class AllTables:
     async def select_worker(self, **kwargs):
         # SQL_EXAMPLE = "SELECT * FROM main_app_worker where id=1 AND Name='John'"
         sql = "SELECT * FROM main_app_worker WHERE "
-        sql, parameters = self.format_args(sql, kwargs)
+        sql, parameters = self.format_args(sql, " AND ", kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
 
     async def add_gym(
@@ -172,7 +175,7 @@ class AllTables:
     async def select_gym(self, **kwargs):
         # SQL_EXAMPLE = "SELECT * FROM main_app_gym where id=1 AND Name='John'"
         sql = "SELECT * FROM main_app_gym WHERE "
-        sql, parameters = self.format_args(sql, kwargs)
+        sql, parameters = self.format_args(sql, " AND ", kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
 
     async def select_admin(self, column, **kwargs):
