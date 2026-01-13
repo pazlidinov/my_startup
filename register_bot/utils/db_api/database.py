@@ -86,6 +86,21 @@ class AllTables:
         sql, parameters = self.format_args(sql, kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
 
+    async def update_client(self, secret_code: str, qr_code: str, telegram_id: str):
+        sql = """
+        UPDATE main_app_client
+        SET secret_code = $1,
+            qr_code = $2
+        WHERE telegram_id = $3
+        """
+        return await self.execute(
+            sql,
+            secret_code,
+            qr_code,
+            telegram_id,
+            execute=True,
+        )
+
     async def add_worker(
         self,
         gym: int,
@@ -162,8 +177,8 @@ class AllTables:
 
     async def select_admin(self, column, **kwargs):
         # SQL_EXAMPLE = "SELECT column FROM main_app_admin where id=1 AND Name='John'"
-        sql = f"SELECT {column} FROM main_app_admin"       
+        sql = f"SELECT {column} FROM main_app_admin"
         return await self.execute(sql, fetchval=True)
-        
-    
+
+
 all_tables = AllTables()

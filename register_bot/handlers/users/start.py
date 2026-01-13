@@ -90,13 +90,15 @@ async def for_client(call: types.CallbackQuery, state: FSMContext):
             qr_code=qr_code,
         )
         await call.answer(
-            "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
+            "☑️ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
         )
-        await call.message.answer(reply_markup=menu_client.client_main_menu)
+        await call.message.answer_photo(open(qr_code, "rb"),
+        caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
+        reply_markup=menu_client.client_main_menu,)
     except Exception as err:
         logging.exception(err)
         await call.answer(
-            "Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
+            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
         )
 
     await state.finish()
@@ -124,7 +126,7 @@ async def for_worker(call: types.CallbackQuery, state: FSMContext):
             chat_id=call.message.chat.id, message_id=last_msg.message_id
         )
         await call.answer(
-            "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
+            "☑️ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
         )
     except Exception as err:
         logging.exception(err)
@@ -132,7 +134,7 @@ async def for_worker(call: types.CallbackQuery, state: FSMContext):
             chat_id=call.message.chat.id, message_id=last_msg.message_id
         )
         await call.answer(
-            "Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
+            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
         )
     await state.finish()
 
@@ -236,14 +238,18 @@ async def lump_sum(message: types.Message, state: FSMContext):
             is_director=True,
         )
         last_msg = await message.answer(
-            "Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz."
+            "☑️ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz."
         )
     except Exception as err:
         logging.exception(err)
         last_msg = await message.answer(
-            "Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
         )
     await asyncio.sleep(10)
     await bot.delete_message(chat_id=message.chat.id, message_id=last_msg.message_id)
-    await message.answer(reply_markup=menu_gym.gym_main_menu)
+    await message.answer_photo(
+        open(qr_code, "rb"),
+        caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",
+        reply_markup=menu_gym.gym_main_menu,
+    )
     await state.finish()

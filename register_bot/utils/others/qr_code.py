@@ -1,4 +1,4 @@
-import os
+
 import qrcode
 from pathlib import Path
 
