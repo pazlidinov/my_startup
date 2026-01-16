@@ -178,6 +178,11 @@ class AllTables:
         sql, parameters = self.format_args(sql, " AND ", kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
 
+    async def select_payment(self, client_id, year, month):
+        # SQL_EXAMPLE = "SELECT * FROM main_app_payment where id=1 AND Name='John'"
+        sql = f"SELECT * FROM main_app_payment WHERE client_id = {telegram_id} AND date_start >= make_date({year}, {month}, 1) AND date_start <  (make_date({year}, {month}, 1) + INTERVAL '1 month') AND (is_active = TRUE OR is_active IS NULL)"
+        return await self.execute(sql, fetchrow=True)
+
     async def select_admin(self, column, **kwargs):
         # SQL_EXAMPLE = "SELECT column FROM main_app_admin where id=1 AND Name='John'"
         sql = f"SELECT {column} FROM main_app_admin"

@@ -5,7 +5,7 @@ gym_main_menu=InlineKeyboardMarkup(
         [InlineKeyboardButton(text="🔎 Skanerlash", callback_data='gym_scaner'),],
         [InlineKeyboardButton(text="💶 Bir kunlik to'lov", callback_data='gym_lum_sum'),],
         [InlineKeyboardButton(text="💵 Balans", callback_data='gym_balance'),],
-        [InlineKeyboardButton(text="📈📊 Statistika", callback_data='gym_statics'),],
+        [InlineKeyboardButton(text="📈📊 Statistika", callback_data='gym_statistics'),],
         [InlineKeyboardButton(text="⚙️ Sozlamalar", callback_data='gym_settings'),],
     ]
 )

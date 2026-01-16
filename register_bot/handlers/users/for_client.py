@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from loader import bot, dp
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -45,6 +45,32 @@ async def for_client(call: types.CallbackQuery):
         )
 
 
+@dp.callback_query_handler(lambda c: c.data == "client_balance")
+async def choose_client_lang(call: types.CallbackQuery):
+    pass
+
+
+@dp.callback_query_handler(lambda c: c.data == "client_statistics")
+async def choose_client_lang(call: types.CallbackQuery):
+    await call.answer()
+    today = date.today()
+    try:
+        client = await db.select_client(telegram_id=str(call.from_user.id))
+        client_payment = await db.select_payment(
+            client_id=str(client["id"]), year=today.year, month=today.month
+        )
+        await call.message.delete()
+    except Exception as err:
+        logging.exception(err)
+        return await call.answer(
+            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
+        )
+    if client_payment:
+        return await call.answer("🚫 To'lovlar topilmadi", show_alert=True)
+    for items in client_payment:
+        pass
+
+
 @dp.callback_query_handler(lambda c: c.data == "client_lang")
 async def choose_client_lang(call: types.CallbackQuery):
     await call.message.delete()
@@ -60,7 +86,6 @@ async def choose_client_lang(call: types.CallbackQuery):
 @dp.callback_query_handler(state=ClientLang.lang)
 async def change_client_lang(call: types.CallbackQuery, state: FSMContext):
     await call.answer()
-    print(call.data)
     try:
         await db.update_client(telegram_id=str(call.from_user.id), language=call.data)
         await call.message.delete()
