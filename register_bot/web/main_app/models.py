@@ -16,7 +16,6 @@ class Gym(models.Model):
     secret_code = models.CharField(unique=True, max_length=10)
     qr_code = models.ImageField()
     lump_sum = models.PositiveIntegerField(default=0)
-    # lump_trainer_sum = models.PositiveIntegerField(default=0, blank=True, null=True)
     balance = models.BigIntegerField(default=0)
     date_end = models.DateField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
@@ -75,7 +74,7 @@ class Payment(models.Model):
     is_active = models.BooleanField(blank=True, null=True)
 
     def __str__(self):
-        return self.gym + "_" + self.client
+        return f"{self.gym}_{self.client}"
 
 
 class Registration(models.Model):

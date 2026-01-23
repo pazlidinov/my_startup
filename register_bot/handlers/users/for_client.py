@@ -47,28 +47,33 @@ async def for_client(call: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda c: c.data == "client_balance")
 async def choose_client_lang(call: types.CallbackQuery):
-    pass
-
-
-@dp.callback_query_handler(lambda c: c.data == "client_statistics")
-async def choose_client_lang(call: types.CallbackQuery):
     await call.answer()
-    today = date.today()
     try:
-        client = await db.select_client(telegram_id=str(call.from_user.id))
-        client_payment = await db.select_payment(
-            client_id=str(client["id"]), year=today.year, month=today.month
+        client_balance = await db.select_payment_for_balance(
+            telegram_id=str(call.from_user.id)
         )
-        await call.message.delete()
     except Exception as err:
         logging.exception(err)
         return await call.answer(
             "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
         )
-    if client_payment:
-        return await call.answer("🚫 To'lovlar topilmadi", show_alert=True)
-    for items in client_payment:
-        pass
+    if client_balance == []:
+        return await call.answer("🚫 Aktiv to'lovlar topilmadi", show_alert=True)
+    send_message = ""
+    for i, item in enumerate(client_balance[0], start=1):
+    #     send_message += (
+    #         f"{i}. <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a>\n"
+    #         + f"To'lov: {item['price']}\n"
+    #         + f"Foydalanilgan: {item['count']}/{item['balanse']}\n"
+    #         + f"Muddati: {item['date_start']}-{item['date_end']}"
+    #         + f"Faolligi: {'Foal' if item['is_active'] else 'Foal emas'}\n"
+    #     )
+    # await call.message.answer(text=send_message)
+
+
+@dp.callback_query_handler(lambda c: c.data == "client_statistics")
+async def choose_client_lang(call: types.CallbackQuery):
+    pass
 
 
 @dp.callback_query_handler(lambda c: c.data == "client_lang")
@@ -103,3 +108,19 @@ async def change_client_lang(call: types.CallbackQuery, state: FSMContext):
             "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
         )
     await state.finish()
+
+
+# [<Record
+#  id=3
+#  balanse=10
+#  price=10
+#  is_trainer=True
+#  is_active=True
+#  client_id=46
+#  gym_id=5
+#  count=5
+#  date_end=datetime.date(2026, 1, 20)
+#  date_start=datetime.date(2026, 1, 16)
+#  id=5 name='Power' loc_lat=40.709368 loc_long=72.283077 secret_code='UDiA4f9ouo' qr_code='C:\\Users\\User\\Documents\\GitHub\\my_startup\\register_bot\\qr_code_img\\141253372.png' is_active=True date_end=datetime.date(2026, 2, 9) lump_sum=6363 balance=0
+#  id=46 first_name='Zoxidaxon' last_name='Pazlidinova💎' telegram_id='8294197772' phone_number='998999213380' secret_code='ROAyDPLRYH' qr_code='C:\\Users\\User\\Documents\\GitHub\\my_startup\\register_bot\\qr_code_img\\8294197772.png' is_active=True language='lotin' user_name='zoxida_2728'
+#  >]

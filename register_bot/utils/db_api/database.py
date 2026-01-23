@@ -61,11 +61,15 @@ class AllTables:
         qr_code: str,
         is_active: bool = True,
     ):
-        # SQL_EXAMPLE = "INSERT INTO main_app_client(id, name, surname, username, phone) VALUES(1, 'John', 'Smith', 'jsmith', '+1234567890')"
-
-        sql = """
-        INSERT INTO main_app_client (user_name, first_name, last_name, telegram_id, phone_number, language, secret_code, qr_code, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        """
+        # SQL_EXAMPLE = "INSERT INTO main_app_client
+        # (id, name, surname, username, phone)
+        # VALUES(1, 'John', 'Smith', 'jsmith', '+1234567890')"
+        sql = (
+            "INSERT INTO main_app_client "
+            "(user_name, first_name, last_name, telegram_id, phone_number, "
+            "language, secret_code, qr_code, is_active) "
+            "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+        )
         return await self.execute(
             sql,
             user_name,
@@ -81,7 +85,8 @@ class AllTables:
         )
 
     async def select_client(self, **kwargs):
-        # SQL_EXAMPLE = "SELECT * FROM main_app_client where id=1 AND Name='John'"
+        # SQL_EXAMPLE = "SELECT * FROM main_app_client
+        # where id=1 AND Name='John'"
         sql = "SELECT * FROM main_app_client WHERE "
         sql, parameters = self.format_args(sql, " AND ", kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
@@ -96,7 +101,6 @@ class AllTables:
             else self.format_args(sql, "", kwargs)
         )
         sql += f" WHERE telegram_id = ${len(kwargs)+1}"
-
         return await self.execute(
             sql,
             *parameters,
@@ -116,11 +120,15 @@ class AllTables:
         is_director: bool = False,
         is_active: bool = True,
     ):
-        # SQL_EXAMPLE = "INSERT INTO main_app_worker(id, name, surname, username, phone) VALUES(1, 'John', 'Smith', 'jsmith', '+1234567890')"
-
-        sql = """
-        INSERT INTO main_app_worker (gym_id, user_name, first_name, last_name, telegram_id, phone_number, language, is_director, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        """
+        # SQL_EXAMPLE = "INSERT INTO main_app_worker
+        # (id, name, surname, username, phone)
+        # VALUES(1, 'John', 'Smith', 'jsmith', '+1234567890')"
+        sql = (
+            "INSERT INTO main_app_worker "
+            "(gym_id, user_name, first_name, last_name, telegram_id, "
+            "phone_number, language, is_director, is_active) "
+            "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+        )
         return await self.execute(
             sql,
             gym,
@@ -153,11 +161,17 @@ class AllTables:
         date_end: Optional[date] = None,
         is_active: bool = True,
     ):
-        # SQL_EXAMPLE = "INSERT INTO main_app_gym(id, name, surname, username, phone) VALUES(1, 'John', 'Smith', 'jsmith', '+1234567890')"
+        # SQL_EXAMPLE = "INSERT INTO main_app_gym
+        # (id, name, surname, username, phone)
+        # VALUES(1, 'John', 'Smith', 'jsmith', '+1234567890') RETURNING 1"
+        sql = (
+            "INSERT INTO main_app_gym "
+            "(name, loc_lat, loc_long, secret_code, qr_code, lump_sum, "
+            "balance, date_end, is_active) "
+            "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) "
+            "RETURNING id"
+        )
 
-        sql = """
-        INSERT INTO main_app_gym (name, loc_lat, loc_long, secret_code, qr_code, lump_sum, balance, date_end, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id
-        """
         return await self.execute(
             sql,
             name,
@@ -173,18 +187,34 @@ class AllTables:
         )
 
     async def select_gym(self, **kwargs):
-        # SQL_EXAMPLE = "SELECT * FROM main_app_gym where id=1 AND Name='John'"
+        # SQL_EXAMPLE = "SELECT * FROM main_app_gym
+        # where id=1 AND Name='John'"
         sql = "SELECT * FROM main_app_gym WHERE "
         sql, parameters = self.format_args(sql, " AND ", kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
 
-    async def select_payment(self, client_id, year, month):
-        # SQL_EXAMPLE = "SELECT * FROM main_app_payment where id=1 AND Name='John'"
-        sql = f"SELECT * FROM main_app_payment WHERE client_id = {telegram_id} AND date_start >= make_date({year}, {month}, 1) AND date_start <  (make_date({year}, {month}, 1) + INTERVAL '1 month') AND (is_active = TRUE OR is_active IS NULL)"
-        return await self.execute(sql, fetchrow=True)
+    async def select_payment_for_balance(self, telegram_id):
+        sql = (
+            "SELECT p.*, g.name, g.loc_lat, g.loc_long FROM main_app_payment p "
+            "JOIN main_app_gym g ON g.id = p.gym_id "
+            "JOIN main_app_client c ON c.id = p.client_id "
+            "WHERE p.is_active = TRUE "
+            "AND c.telegram_id = $1 "
+            "AND ( "
+            "( p.balanse = 0 AND p.date_end IS NOT NULL "
+            "AND p.date_end > CURRENT_DATE ) "
+            "OR "
+            "( p.balanse > 0 AND p.date_end IS NULL "
+            "AND p.count < p.balanse ) "
+            "OR "
+            "( p.balanse > 0 AND p.date_end IS NOT NULL "
+            "AND p.date_end >= CURRENT_DATE AND p.count < p.balanse ))"
+        )
+        return await self.execute(sql, telegram_id, fetch=True)
 
     async def select_admin(self, column, **kwargs):
-        # SQL_EXAMPLE = "SELECT column FROM main_app_admin where id=1 AND Name='John'"
+        # SQL_EXAMPLE = "SELECT column FROM main_app_admin
+        # where id=1 AND Name='John'"
         sql = f"SELECT {column} FROM main_app_admin"
         return await self.execute(sql, fetchval=True)
 
