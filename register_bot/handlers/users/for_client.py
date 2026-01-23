@@ -1,13 +1,12 @@
-from datetime import datetime, timedelta, date
-from loader import bot, dp
+from datetime import date
+from loader import dp
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from keyboards.inline import langsKeyboard, roleKeyboard, menu_client, monthsKeyboard
+from keyboards.inline import langsKeyboard, menu_client, monthsKeyboard
 from utils.others.secret_code import generate_code
 from utils.others.qr_code import generate_qr_code
 from utils.db_api.database import all_tables as db
 import logging
-import asyncio
 import os
 from states.client_states import ClientLang
 from pathlib import Path
@@ -95,9 +94,9 @@ async def client_active_balance(call: types.CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data.startswith("client_balance_month"))
 async def client_balance_by_month(call: types.CallbackQuery):
     await call.answer()
-    date = call.data.split("_")[-1]
-    year = date.split("-")[0]
-    month = date.split("-")[1]
+    data_date = call.data.split("_")[-1]
+    year = data_date.split("-")[0]
+    month = data_date.split("-")[1]
     try:
         client_balance = await db.select_payment_by_month(
             telegram_id=str(call.from_user.id), year=int(year), month=int(month)
@@ -116,7 +115,7 @@ async def client_balance_by_month(call: types.CallbackQuery):
     send_text = f"{year}-yil {all_months[int(month)-1]} oyidagi to'lovlar:\n"
     for i, item in enumerate(client_balance, start=1):
         send_text += (
-            f"<b>{i}. <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
+            f"<b>{i}) <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
             + f"<b>To'lov:</b> {item['price']}\n"
             + f"<b>Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
             + f"<b>Muddati:</b> {item['date_start']} / {item['date_end']}\n"
@@ -132,9 +131,43 @@ async def client_balance_by_month(call: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda c: c.data.startswith("client_statistics"))
 async def client_statistics(call: types.CallbackQuery):
-    # await call.answer()
-    # date = call.data.split("_")
-    pass
+    await call.answer()
+    if len(call.data.split("_")) == 2:
+        today = date.today()
+        year, month = today.year, today.month
+    else:
+        data_date = call.data.split("_")
+        year = data_date[-1].split("-")[0]
+        month = data_date[-1].split("-")[1]
+    try:
+        client_statistics = await db.select_registrations_for_client(
+            telegram_id=str(call.from_user.id), year=int(year), month=int(month)
+        )
+    except Exception as err:
+        logging.exception(err)
+        return await call.answer(
+            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
+        )
+    await call.message.delete()
+    if len(client_statistics) == 0:
+        return await call.message.answer(
+            text=f"{year}-yil {all_months[int(month)-1]} oyida foallik topilmadi",
+            reply_markup=monthsKeyboard.get_months_key("client", "statistics"),
+        )
+    send_text = f"{year}-yil {all_months[int(month)-1]} oyidagi faollik:\n"
+    for i, item in enumerate(client_statistics, start=1):
+        send_text += (
+            f"<b>{i}) <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['gym_name']}</a></b>\n"
+            + f"<b>Sana:</b> {item['date'].strftime('%Y-%m-%d %H:%M:%S')}\n"
+            + f"<b>To'lov:</b> {item['date_start']} kungi to'lov asosida\n"
+        )
+    return await call.message.answer(
+        text=send_text,
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+        reply_markup=monthsKeyboard.get_months_key("client", "statistics"),
+    )
+
 
 @dp.callback_query_handler(lambda c: c.data == "client_lang")
 async def choose_client_lang(call: types.CallbackQuery):

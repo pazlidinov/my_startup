@@ -32,12 +32,12 @@ class ClientAdmin(admin.ModelAdmin):
         "phone_number",
         "secret_code",
         "language",
-        "is_active",       
+        "is_active",
         "qr_code",
     ]
     list_display_links = ["first_name"]
     list_per_page = 50
-    
+
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
@@ -58,6 +58,7 @@ class RegistrationAdmin(admin.ModelAdmin):
     list_display = [
         "gym",
         "client",
+        "date",
         "is_trainer",
         "payment",
     ]

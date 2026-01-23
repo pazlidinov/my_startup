@@ -95,7 +95,7 @@ class Registration(models.Model):
     )
 
     def __str__(self):
-        return self.gym + "_" + self.client
+        return f"{self.gym}___{self.client}"
 
 
 class Admin(models.Model):
