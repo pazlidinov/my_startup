@@ -33,7 +33,7 @@ class Worker(models.Model):
     last_name = models.CharField(max_length=66, blank=True, null=True)
     telegram_id = models.CharField(unique=True, max_length=20)
     phone_number = models.CharField(max_length=25)
-    language = models.CharField(choices=Languages, max_length=25)   
+    language = models.CharField(choices=Languages, max_length=25)
     is_director = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
@@ -88,6 +88,7 @@ class Registration(models.Model):
         blank=True,
         null=True,
     )
+    date = models.DateTimeField(auto_now_add=True)
     is_trainer = models.BooleanField(default=False)
     payment = models.ForeignKey(
         Payment, on_delete=models.CASCADE, related_name="payment_registration"
@@ -102,8 +103,8 @@ class Admin(models.Model):
     telegram_id = models.CharField(unique=True, max_length=20)
     free_days = models.PositiveIntegerField(default=0)
     amount = models.PositiveIntegerField(default=0)
-    card_name=models.CharField(max_length=200)
-    card_number=models.CharField(max_length=16)
+    card_name = models.CharField(max_length=200)
+    card_number = models.CharField(max_length=16)
 
     def __str__(self):
         return self.user_name

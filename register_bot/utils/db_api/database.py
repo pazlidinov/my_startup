@@ -208,9 +208,21 @@ class AllTables:
             "AND p.count < p.balanse ) "
             "OR "
             "( p.balanse > 0 AND p.date_end IS NOT NULL "
-            "AND p.date_end >= CURRENT_DATE AND p.count < p.balanse ))"
+            "AND p.date_end >= CURRENT_DATE AND p.count < p.balanse ));"
         )
         return await self.execute(sql, telegram_id, fetch=True)
+
+    async def select_payment_by_month(self, telegram_id, year, month):
+        sql = (
+            "SELECT r.*, g.name AS gym_name, "
+            "g.loc_lat, g.loc_long, p.date_start "
+            "FROM main_app_registration r JOIN main_app_client c"
+            "ON c.id = r.client_id JOIN main_app_gym g ON g.id = r.gym_id "
+            "JOIN main_app_payment p ON p.id = r.payment_id "
+            "WHERE c.telegram_id = $1 AND EXTRACT(YEAR FROM r.date) = $2 "
+            "AND EXTRACT(MONTH FROM r.date) = $3;"
+        )
+        return await self.execute(sql, telegram_id, year, month, fetch=True)
 
     async def select_admin(self, column, **kwargs):
         # SQL_EXAMPLE = "SELECT column FROM main_app_admin

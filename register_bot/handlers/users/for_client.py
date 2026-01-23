@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, date
 from loader import bot, dp
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from keyboards.inline import langsKeyboard, roleKeyboard, menu_client, menu_gym
+from keyboards.inline import langsKeyboard, roleKeyboard, menu_client, monthsKeyboard
 from utils.others.secret_code import generate_code
 from utils.others.qr_code import generate_qr_code
 from utils.db_api.database import all_tables as db
@@ -11,15 +11,30 @@ import asyncio
 import os
 from states.client_states import ClientLang
 from pathlib import Path
+from aiogram.types import InlineKeyboardButton
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MEDIA_DIR = BASE_DIR / "qr_code_img"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+all_months = [
+    "Yanvar",
+    "Fevral",
+    "Mart",
+    "Aprel",
+    "May",
+    "Iyun",
+    "Iyul",
+    "Avgust",
+    "Sentabr",
+    "Oktyabr",
+    "Noyabr",
+    "Dekabr",
+]
 
 
 @dp.callback_query_handler(lambda c: c.data == "client_new_qrcode")
-async def for_client(call: types.CallbackQuery):
+async def new_qr_code(call: types.CallbackQuery):
     try:
         client = await db.select_client(telegram_id=str(call.from_user.id))
         path_img = client["qr_code"]
@@ -46,7 +61,7 @@ async def for_client(call: types.CallbackQuery):
 
 
 @dp.callback_query_handler(lambda c: c.data == "client_balance")
-async def choose_client_lang(call: types.CallbackQuery):
+async def client_active_balance(call: types.CallbackQuery):
     await call.answer()
     try:
         client_balance = await db.select_payment_for_balance(
@@ -57,33 +72,81 @@ async def choose_client_lang(call: types.CallbackQuery):
         return await call.answer(
             "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
         )
+    await call.message.delete()
     if client_balance == []:
         return await call.answer("🚫 Aktiv to'lovlar topilmadi", show_alert=True)
-    send_message = ""
-    for i, item in enumerate(client_balance[0], start=1):
-    #     send_message += (
-    #         f"{i}. <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a>\n"
-    #         + f"To'lov: {item['price']}\n"
-    #         + f"Foydalanilgan: {item['count']}/{item['balanse']}\n"
-    #         + f"Muddati: {item['date_start']}-{item['date_end']}"
-    #         + f"Faolligi: {'Foal' if item['is_active'] else 'Foal emas'}\n"
-    #     )
-    # await call.message.answer(text=send_message)
+    send_text = "Faol bo'lgan to'lovlar:\n"
+    for i, item in enumerate(client_balance, start=1):
+        send_text += (
+            f"<b>{i}. <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
+            + f"<b>To'lov:</b> {item['price']}\n"
+            + f"<b>Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
+            + f"<b>Muddati:</b> {item['date_start']} / {item['date_end']}\n"
+            + f"<b>Faolligi:</b> {'Foal' if item['is_active'] else 'Foal emas'}\n"
+        )
+    await call.message.answer(
+        text=send_text,
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+        reply_markup=monthsKeyboard.get_months_key("client", "balance"),
+    )
 
 
-@dp.callback_query_handler(lambda c: c.data == "client_statistics")
-async def choose_client_lang(call: types.CallbackQuery):
+@dp.callback_query_handler(lambda c: c.data.startswith("client_balance_month"))
+async def client_balance_by_month(call: types.CallbackQuery):
+    await call.answer()
+    date = call.data.split("_")[-1]
+    year = date.split("-")[0]
+    month = date.split("-")[1]
+    try:
+        client_balance = await db.select_payment_by_month(
+            telegram_id=str(call.from_user.id), year=int(year), month=int(month)
+        )
+    except Exception as err:
+        logging.exception(err)
+        return await call.answer(
+            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
+        )
+    await call.message.delete()
+    if len(client_balance) == 0:
+        return await call.message.answer(
+            text=f"{year}-yil {all_months[int(month)-1]} oyida to'lovlar topilmadi",
+            reply_markup=monthsKeyboard.get_months_key("client", "balance"),
+        )
+    send_text = f"{year}-yil {all_months[int(month)-1]} oyidagi to'lovlar:\n"
+    for i, item in enumerate(client_balance, start=1):
+        send_text += (
+            f"<b>{i}. <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
+            + f"<b>To'lov:</b> {item['price']}\n"
+            + f"<b>Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
+            + f"<b>Muddati:</b> {item['date_start']} / {item['date_end']}\n"
+            + f"<b>Faolligi:</b> {'Foal' if item['is_active'] else 'Foal emas'}\n"
+        )
+    return await call.message.answer(
+        text=send_text,
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+        reply_markup=monthsKeyboard.get_months_key("client", "balance"),
+    )
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("client_statistics"))
+async def client_statistics(call: types.CallbackQuery):
+    # await call.answer()
+    # date = call.data.split("_")
     pass
-
 
 @dp.callback_query_handler(lambda c: c.data == "client_lang")
 async def choose_client_lang(call: types.CallbackQuery):
     await call.message.delete()
+    langs_with_menu = langsKeyboard.langs.add(
+        InlineKeyboardButton(text="🔙 Menu", callback_data=f"menu_client")
+    )
     await call.message.answer(
         "🇺🇿Hurmatli mijoz, kerakli tilni tanlang!\n"
         "🇺🇿Ҳурматли мижоз, керакли тилни танланг!\n"
         "🇷🇺Уважаемый клиент, пожалуйста, выберите нужный язык!",
-        reply_markup=langsKeyboard.langs,
+        reply_markup=langs_with_menu,
     )
     await ClientLang.lang.set()
 
@@ -108,19 +171,3 @@ async def change_client_lang(call: types.CallbackQuery, state: FSMContext):
             "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
         )
     await state.finish()
-
-
-# [<Record
-#  id=3
-#  balanse=10
-#  price=10
-#  is_trainer=True
-#  is_active=True
-#  client_id=46
-#  gym_id=5
-#  count=5
-#  date_end=datetime.date(2026, 1, 20)
-#  date_start=datetime.date(2026, 1, 16)
-#  id=5 name='Power' loc_lat=40.709368 loc_long=72.283077 secret_code='UDiA4f9ouo' qr_code='C:\\Users\\User\\Documents\\GitHub\\my_startup\\register_bot\\qr_code_img\\141253372.png' is_active=True date_end=datetime.date(2026, 2, 9) lump_sum=6363 balance=0
-#  id=46 first_name='Zoxidaxon' last_name='Pazlidinova💎' telegram_id='8294197772' phone_number='998999213380' secret_code='ROAyDPLRYH' qr_code='C:\\Users\\User\\Documents\\GitHub\\my_startup\\register_bot\\qr_code_img\\8294197772.png' is_active=True language='lotin' user_name='zoxida_2728'
-#  >]
