@@ -20,7 +20,7 @@ async def bot_start(message: types.Message):
         "🇺🇿Hurmatli mijoz, kerakli tilni tanlang!\n"
         "🇺🇿Ҳурматли мижоз, керакли тилни танланг!\n"
         "🇷🇺Уважаемый клиент, пожалуйста, выберите нужный язык!",
-        reply_markup=langsKeyboard.langs,
+        reply_markup=langsKeyboard.langs("None"),
     )
     await Client.lang.set()
 
@@ -33,7 +33,7 @@ async def lang_stage(call: types.CallbackQuery, state: FSMContext):
         first_name=call.from_user.first_name,
         last_name=call.from_user.last_name,
         telegram_id=call.from_user.id,
-        language=call.data,
+        language=call.data.split("_")[-1],
     )
     # INLINE keyboardni olib tashlaymiz (MUHIM)
     await call.message.edit_reply_markup(reply_markup=None)
@@ -92,9 +92,11 @@ async def for_client(call: types.CallbackQuery, state: FSMContext):
         await call.answer(
             "☑️ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
         )
-        await call.message.answer_photo(open(qr_code, "rb"),
-        caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
-        reply_markup=menu_client.client_main_menu,)
+        await call.message.answer_photo(
+            open(qr_code, "rb"),
+            caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
+            reply_markup=menu_client.client_main_menu,
+        )
     except Exception as err:
         logging.exception(err)
         await call.answer(

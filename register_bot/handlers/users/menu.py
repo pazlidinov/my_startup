@@ -13,23 +13,21 @@ MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 @dp.message_handler(Command(commands=["menu"]))
 async def menu(message: types.Message):
+    await message.delete()
     try:
         client = await db.select_client(telegram_id=str(message.from_user.id))
-        await message.delete()
         await message.answer_photo(
             open(client["qr_code"], "rb"),
             caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
             reply_markup=menu_client.client_main_menu,
-        )
+        )        
     except Exception as err:
         logging.exception(err)
-        await message.answer(
-            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
-        )
+        await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
 
 
 @dp.callback_query_handler(lambda c: c.data == "menu_client")
-async def client_statistics(call: types.CallbackQuery):
+async def menu_for_client(call: types.CallbackQuery):
     await call.answer()
     await call.message.delete()
     await call.message.answer_photo(

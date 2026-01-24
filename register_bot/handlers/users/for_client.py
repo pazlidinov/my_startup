@@ -77,11 +77,11 @@ async def client_active_balance(call: types.CallbackQuery):
     send_text = "Faol bo'lgan to'lovlar:\n"
     for i, item in enumerate(client_balance, start=1):
         send_text += (
-            f"<b>{i}. <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
-            + f"<b>To'lov:</b> {item['price']}\n"
-            + f"<b>Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
-            + f"<b>Muddati:</b> {item['date_start']} / {item['date_end']}\n"
-            + f"<b>Faolligi:</b> {'Foal' if item['is_active'] else 'Foal emas'}\n"
+            f"<b>{i}) <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
+            + f"<b>💵 To'lov:</b> {item['price']}\n"
+            + f"<b>📝 Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
+            + f"<b>🗓️ Muddati:</b> {item['date_start']} / {item['date_end']}\n"
+            + f"<b>⭕ Faolligi:</b> {'☑️ Foal' if item['is_active'] else '❌ Foal emas'}\n"
         )
     await call.message.answer(
         text=send_text,
@@ -109,17 +109,17 @@ async def client_balance_by_month(call: types.CallbackQuery):
     await call.message.delete()
     if len(client_balance) == 0:
         return await call.message.answer(
-            text=f"{year}-yil {all_months[int(month)-1]} oyida to'lovlar topilmadi",
+            text=f"🚫 {year}-yil {all_months[int(month)-1]} oyida to'lovlar topilmadi",
             reply_markup=monthsKeyboard.get_months_key("client", "balance"),
         )
     send_text = f"{year}-yil {all_months[int(month)-1]} oyidagi to'lovlar:\n"
     for i, item in enumerate(client_balance, start=1):
         send_text += (
             f"<b>{i}) <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
-            + f"<b>To'lov:</b> {item['price']}\n"
-            + f"<b>Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
-            + f"<b>Muddati:</b> {item['date_start']} / {item['date_end']}\n"
-            + f"<b>Faolligi:</b> {'Foal' if item['is_active'] else 'Foal emas'}\n"
+            + f"<b>💵 To'lov:</b> {item['price']}\n"
+            + f"<b>📝 Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
+            + f"<b>🗓️ Muddati:</b> {item['date_start']} / {item['date_end']}\n"
+            + f"<b>⭕ Faolligi:</b> {'☑️ Foal' if item['is_active'] else '❌ Foal emas'}\n"
         )
     return await call.message.answer(
         text=send_text,
@@ -151,15 +151,15 @@ async def client_statistics(call: types.CallbackQuery):
     await call.message.delete()
     if len(client_statistics) == 0:
         return await call.message.answer(
-            text=f"{year}-yil {all_months[int(month)-1]} oyida foallik topilmadi",
+            text=f"🚫 {year}-yil {all_months[int(month)-1]} oyida foallik topilmadi",
             reply_markup=monthsKeyboard.get_months_key("client", "statistics"),
         )
     send_text = f"{year}-yil {all_months[int(month)-1]} oyidagi faollik:\n"
     for i, item in enumerate(client_statistics, start=1):
         send_text += (
             f"<b>{i}) <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['gym_name']}</a></b>\n"
-            + f"<b>Sana:</b> {item['date'].strftime('%Y-%m-%d %H:%M:%S')}\n"
-            + f"<b>To'lov:</b> {item['date_start']} kungi to'lov asosida\n"
+            + f"<b>🗓️ Sana:</b> {item['date'].strftime('%Y-%m-%d %H:%M:%S')}\n"
+            + f"<b>💵 To'lov:</b> {item['date_start']} kungi to'lov asosida\n"
         )
     return await call.message.answer(
         text=send_text,
@@ -171,24 +171,27 @@ async def client_statistics(call: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda c: c.data == "client_lang")
 async def choose_client_lang(call: types.CallbackQuery):
+    await call.answer()
     await call.message.delete()
-    langs_with_menu = langsKeyboard.langs.add(
-        InlineKeyboardButton(text="🔙 Menu", callback_data=f"menu_client")
-    )
+    langs_for_client = langsKeyboard.langs("client")
     await call.message.answer(
         "🇺🇿Hurmatli mijoz, kerakli tilni tanlang!\n"
         "🇺🇿Ҳурматли мижоз, керакли тилни танланг!\n"
         "🇷🇺Уважаемый клиент, пожалуйста, выберите нужный язык!",
-        reply_markup=langs_with_menu,
+        reply_markup=langs_for_client.add(
+            InlineKeyboardButton(text="🔙 Menu", callback_data=f"menu_client")
+        ),
     )
-    await ClientLang.lang.set()
+    langs_for_client = ""
 
 
-@dp.callback_query_handler(state=ClientLang.lang)
-async def change_client_lang(call: types.CallbackQuery, state: FSMContext):
+@dp.callback_query_handler(lambda c: c.data.startswith("client_lang"))
+async def change_client_lang(call: types.CallbackQuery):
     await call.answer()
     try:
-        await db.update_client(telegram_id=str(call.from_user.id), language=call.data)
+        await db.update_client(
+            telegram_id=str(call.from_user.id), language=call.data.split("_")[-1]
+        )
         await call.message.delete()
         await call.answer(
             "☑️ Tabriklaymiz, til muvaffaqiyatli yangilandi", show_alert=True
@@ -203,4 +206,3 @@ async def change_client_lang(call: types.CallbackQuery, state: FSMContext):
         await call.answer(
             "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
         )
-    await state.finish()
