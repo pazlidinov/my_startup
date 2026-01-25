@@ -1,14 +1,12 @@
 from datetime import date
 from loader import dp
 from aiogram import types
-from aiogram.dispatcher import FSMContext
 from keyboards.inline import langsKeyboard, menu_client, monthsKeyboard
 from utils.others.secret_code import generate_code
 from utils.others.qr_code import generate_qr_code
 from utils.db_api.database import all_tables as db
 import logging
 import os
-from states.client_states import ClientLang
 from pathlib import Path
 from aiogram.types import InlineKeyboardButton
 
@@ -182,7 +180,6 @@ async def choose_client_lang(call: types.CallbackQuery):
             InlineKeyboardButton(text="🔙 Menu", callback_data=f"menu_client")
         ),
     )
-    langs_for_client = ""
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith("client_lang"))

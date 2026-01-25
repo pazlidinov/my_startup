@@ -11,18 +11,49 @@ from utils.others.qr_code import generate_qr_code
 from utils.db_api.database import all_tables as db
 import logging
 import asyncio
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+MEDIA_DIR = BASE_DIR / "qr_code_img"
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @dp.message_handler(CommandStart())
 async def bot_start(message: types.Message):
     await message.delete()
-    await message.answer(
-        "🇺🇿Hurmatli mijoz, kerakli tilni tanlang!\n"
-        "🇺🇿Ҳурматли мижоз, керакли тилни танланг!\n"
-        "🇷🇺Уважаемый клиент, пожалуйста, выберите нужный язык!",
-        reply_markup=langsKeyboard.langs("None"),
-    )
-    await Client.lang.set()
+    try:
+        user = dict(await db.check_user(telegram_id=str(message.from_user.id)))
+        if not user:
+            await message.answer(
+                "❗ Siz ro'yhatdan o'tmagansiz.\n📋 Iltimos, ro'yhatdan o'ting!"
+            )
+            await message.answer(
+                "🇺🇿Hurmatli mijoz, kerakli tilni tanlang!\n"
+                "🇺🇿Ҳурматли мижоз, керакли тилни танланг!\n"
+                "🇷🇺Уважаемый клиент, пожалуйста, выберите нужный язык!",
+                reply_markup=langsKeyboard.langs("None"),
+            )
+        if not user["is_active"]:
+            await message.answer(
+                text="❗ Siz aktiv holatda emassiz.\n"
+                + "Agar 👨‍👦‍👦 hodim bo'lsangiz, reseptionga murojaat qiling!\n"
+                + "Agar mijoz bo'lsangiz, admin murojaat qiling!"
+            )
+        if user["source"] == "client":
+            await message.answer_photo(
+                open(user["qr_code"], "rb"),
+                caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
+                reply_markup=menu_client.client_main_menu,
+            )
+        if user["source"] == "gym":
+            await message.answer_photo(
+                open(MEDIA_DIR / f"{message.from_user.id}.png", "rb"),
+                caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
+                reply_markup=menu_gym.gym_main_menu,
+            )
+    except Exception as err:
+        logging.exception(err)
+        await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
 
 
 @dp.callback_query_handler(state=Client.lang)
@@ -123,6 +154,7 @@ async def for_worker(call: types.CallbackQuery, state: FSMContext):
             telegram_id=str(data.get("telegram_id")),
             phone_number=data.get("phone_number"),
             language=data.get("language"),
+            is_active=False,
         )
         await bot.delete_message(
             chat_id=call.message.chat.id, message_id=last_msg.message_id

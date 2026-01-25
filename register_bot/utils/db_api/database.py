@@ -49,6 +49,21 @@ class AllTables:
         )
         return sql, tuple(parameters.values())
 
+    async def check_user(self, telegram_id: str):
+        sql = (
+            "SELECT is_active, NULL::text AS qr_code, 'gym' AS source "
+            "FROM main_app_worker WHERE telegram_id = $1 "
+            "UNION ALL "
+            "SELECT is_active, qr_code, 'client' AS source "
+            "FROM main_app_client WHERE telegram_id = $1 "
+            "LIMIT 1;"
+        )
+        return await self.execute(
+            sql,
+            telegram_id,
+            fetchrow=True,
+        )
+
     async def add_client(
         self,
         user_name: str,

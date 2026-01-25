@@ -26,7 +26,7 @@ class Gym(models.Model):
 
 class Worker(models.Model):
     gym = models.ForeignKey(
-        Gym, on_delete=models.PROTECT, related_name="gym_worker", blank=True, null=True
+        Gym, on_delete=models.SET_NULL, related_name="gym_worker", blank=True, null=True
     )
     user_name = models.CharField(max_length=100, blank=True, null=True)
     first_name = models.CharField(max_length=66)
@@ -57,10 +57,16 @@ class Client(models.Model):
 
 
 class Payment(models.Model):
-    gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name="gym_payment")
+    gym = models.ForeignKey(
+        Gym,
+        on_delete=models.SET_NULL,
+        related_name="gym_payment",
+        blank=True,
+        null=True,
+    )
     client = models.ForeignKey(
         Client,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="client_payment",
         blank=True,
         null=True,
@@ -79,11 +85,15 @@ class Payment(models.Model):
 
 class Registration(models.Model):
     gym = models.ForeignKey(
-        Gym, on_delete=models.CASCADE, related_name="gym_registration"
+        Gym,
+        on_delete=models.SET_NULL,
+        related_name="gym_registration",
+        blank=True,
+        null=True,
     )
     client = models.ForeignKey(
         Client,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="client_registration",
         blank=True,
         null=True,
@@ -100,6 +110,7 @@ class Registration(models.Model):
 
 class Admin(models.Model):
     user_name = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=25)
     telegram_id = models.CharField(unique=True, max_length=20)
     free_days = models.PositiveIntegerField(default=0)
     amount = models.PositiveIntegerField(default=0)
