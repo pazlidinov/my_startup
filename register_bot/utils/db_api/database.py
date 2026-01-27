@@ -186,7 +186,6 @@ class AllTables:
             "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) "
             "RETURNING id"
         )
-
         return await self.execute(
             sql,
             name,
@@ -207,6 +206,19 @@ class AllTables:
         sql = "SELECT * FROM main_app_gym WHERE "
         sql, parameters = self.format_args(sql, " AND ", kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
+
+    async def balance_gym(self, telegram_id):
+        sql = (
+            "SELECT g.name, g.loc_lat, g.loc_long, g.balance, g.date_end, g.is_active "
+            "FROM main_app_worker w "
+            "LEFT JOIN main_app_gym g ON g.id = w.gym_id "
+            "WHERE w.telegram_id = $1;"
+        )
+        return await self.execute(
+            sql,
+            telegram_id,
+            fetchrow=True,
+        )
 
     async def select_payment_for_balance(self, telegram_id):
         sql = (

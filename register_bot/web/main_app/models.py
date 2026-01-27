@@ -13,6 +13,7 @@ class Gym(models.Model):
     name = models.CharField(max_length=150)
     loc_lat = models.FloatField()
     loc_long = models.FloatField()
+    # waiting_location = models.BooleanField(default=False)
     secret_code = models.CharField(unique=True, max_length=10)
     qr_code = models.ImageField()
     lump_sum = models.PositiveIntegerField(default=0)

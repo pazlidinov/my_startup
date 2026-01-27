@@ -167,7 +167,7 @@ async def client_statistics(call: types.CallbackQuery):
     )
 
 
-@dp.callback_query_handler(lambda c: c.data == "client_lang")
+@dp.callback_query_handler(lambda c: c.data == "client_change_lang")
 async def choose_client_lang(call: types.CallbackQuery):
     await call.answer()
     await call.message.delete()
@@ -177,7 +177,7 @@ async def choose_client_lang(call: types.CallbackQuery):
         "🇺🇿Ҳурматли мижоз, керакли тилни танланг!\n"
         "🇷🇺Уважаемый клиент, пожалуйста, выберите нужный язык!",
         reply_markup=langs_for_client.add(
-            InlineKeyboardButton(text="🔙 Menu", callback_data=f"menu_client")
+            InlineKeyboardButton(text="🔙 Menu", callback_data="menu_client")
         ),
     )
 

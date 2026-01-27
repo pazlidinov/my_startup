@@ -4,3 +4,4 @@ from . import menu
 from . import echo
 from . import for_client
 from . import for_gym
+from . import gym_settings

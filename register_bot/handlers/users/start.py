@@ -162,6 +162,11 @@ async def for_worker(call: types.CallbackQuery, state: FSMContext):
         await call.answer(
             "☑️ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
         )
+        qr_code = generate_qr_code(data.get("telegram_id"), 0)
+        await call.message.answer_photo(
+            open(qr_code, "rb"),
+            caption="⬆️ QrCodeni reseptionga ko'rsating\n",
+        )
     except Exception as err:
         logging.exception(err)
         await bot.delete_message(
