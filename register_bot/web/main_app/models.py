@@ -17,6 +17,7 @@ class Gym(models.Model):
     secret_code = models.CharField(unique=True, max_length=10)
     qr_code = models.ImageField()
     lump_sum = models.PositiveIntegerField(default=0)
+    waiting_lump_sum = models.BooleanField(default=False)
     balance = models.BigIntegerField(default=0)
     date_end = models.DateField(blank=True, null=True)
     worker_count=models.PositiveSmallIntegerField(default=4)

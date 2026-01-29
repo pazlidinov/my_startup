@@ -14,7 +14,7 @@ gym_main_menu=InlineKeyboardMarkup(
 gym_settings_menu=InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="👨‍👦‍👦 Hodimlar", callback_data='gym_worker'),],
-        [InlineKeyboardButton(text="💷 Bir kunlik to'lovni o'zgartirish", callback_data='gym_change_lum_sum'),],
+        [InlineKeyboardButton(text="💷 Bir kunlik to'lovni o'zgartirish", callback_data='gym_change_lump_sum'),],
         [InlineKeyboardButton(text="📍 Joylashuvni o'zgartirish", callback_data='gym_change_location'),],       
         [InlineKeyboardButton(text="🔗 QR Codeni yangilash", callback_data='gym_new_qrcode'),],
         [InlineKeyboardButton(text="🌐 Tilni o'zgartirish", callback_data='gym_change_lang'),],
