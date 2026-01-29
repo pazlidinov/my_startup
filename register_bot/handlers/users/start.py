@@ -130,7 +130,7 @@ async def for_client(call: types.CallbackQuery, state: FSMContext):
         )
     except Exception as err:
         logging.exception(err)
-        await call.answer(
+        await call.message.answer(
             "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
         )
 
@@ -162,7 +162,7 @@ async def for_worker(call: types.CallbackQuery, state: FSMContext):
         await call.answer(
             "☑️ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
         )
-        qr_code = generate_qr_code(data.get("telegram_id"), 0)
+        qr_code = generate_qr_code(data.get("telegram_id"), data.get("telegram_id"))
         await call.message.answer_photo(
             open(qr_code, "rb"),
             caption="⬆️ QrCodeni reseptionga ko'rsating\n",
@@ -172,7 +172,7 @@ async def for_worker(call: types.CallbackQuery, state: FSMContext):
         await bot.delete_message(
             chat_id=call.message.chat.id, message_id=last_msg.message_id
         )
-        await call.answer(
+        await call.message.answer(
             "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
         )
     await state.finish()

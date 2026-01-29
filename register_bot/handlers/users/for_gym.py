@@ -17,7 +17,8 @@ async def client_active_balance(call: types.CallbackQuery):
     try:
         info_gym = dict(await db.balance_gym(telegram_id=str(call.from_user.id)))
         await call.message.answer(
-            text=f"<b><a href='https://maps.google.com/?q={info_gym['loc_lat']},{info_gym['loc_long']}'>{info_gym['name']}</a></b>\n"
+            text=f"<b>✏️ <a href='https://maps.google.com/?q={info_gym['loc_lat']},{info_gym['loc_long']}'>{info_gym['name']}</a></b>\n"
+            + f"<b>🆔 ID:</b> {info_gym['id']}\n"
             + f"<b>💲 Balans:</b> {info_gym['balance']} so'm\n"
             + f"<b>🗓️ Muddati:</b> {info_gym['date_end']}\n"
             + f"<b>⭕ Faolligi:</b> {'☑️ Foal' if info_gym['is_active'] else '❌ Foal emas'}\n",
@@ -26,9 +27,7 @@ async def client_active_balance(call: types.CallbackQuery):
         )
     except Exception as err:
         logging.exception(err)
-        await call.answer(
-            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
-        )
+        await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
 
 
 @dp.callback_query_handler(lambda c: c.data == "gym_settings")

@@ -1,13 +1,9 @@
-
 import qrcode
 from pathlib import Path
 
 
-
-
-
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-MEDIA_DIR = BASE_DIR / "qr_code_img" 
+MEDIA_DIR = BASE_DIR / "qr_code_img"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -27,7 +23,7 @@ def generate_qr_code(telegram_id, secret_code):
     )
 
     # QR kodga aylantirmoqchi bo'lgan ma'lumot
-    qr.add_data(f"{telegram_id}/{secret_code}")
+    qr.add_data(secret_code)
     qr.make(fit=True)
 
     # QR kodni rasm sifatida saqlash

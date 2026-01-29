@@ -20,23 +20,27 @@ async def menu(message: types.Message):
             return await message.answer(
                 "❗ Siz ro'yhatdan o'tmagansiz.\n📋 Iltimos, ro'yhatdan o'ting!"
             )
-        if not user["is_active"]:
+        elif not user["is_active"]:
             return await message.answer(
                 text="❗ Siz aktiv holatda emassiz.\n"
                 + "Agar 👨‍👦‍👦 hodim bo'lsangiz, reseptionga murojaat qiling!\n"
                 + "Agar mijoz bo'lsangiz, adminga murojaat qiling!"
             )
-        if user["source"] == "client":
+        elif user["source"] == "client":
             return await message.answer_photo(
                 open(user["qr_code"], "rb"),
                 caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
                 reply_markup=menu_client.client_main_menu,
             )
-        if user["source"] == "gym":
+        elif user["source"] == "gym":
             return await message.answer_photo(
                 open(MEDIA_DIR / f"{message.from_user.id}.png", "rb"),
                 caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",
                 reply_markup=menu_gym.gym_main_menu,
+            )
+        else:
+            return await message.answer(
+                "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
             )
     except Exception as err:
         logging.exception(err)
@@ -51,11 +55,16 @@ async def menu_for_client(call: types.CallbackQuery):
     await call.message.delete()
     user_type = call.data.split("_")[-1]
     if user_type == "client":
-        key_board = menu_client.client_main_menu
-    if user_type == "gym":
-        key_board = menu_gym.gym_main_menu
-    return await call.message.answer_photo(
-        open(MEDIA_DIR / f"{call.from_user.id}.png", "rb"),
-        caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
-        reply_markup=key_board,
-    )
+        return await call.message.answer_photo(
+            open(MEDIA_DIR / f"{call.from_user.id}.png", "rb"),
+            caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
+            reply_markup=menu_client.client_main_menu,
+        )
+    elif user_type == "gym":
+        return await call.message.answer_photo(
+            open(MEDIA_DIR / f"{call.from_user.id}.png", "rb"),
+            caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",
+            reply_markup=menu_gym.gym_main_menu,
+        )
+    else:
+        return await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")

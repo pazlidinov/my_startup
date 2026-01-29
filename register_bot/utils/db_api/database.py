@@ -164,6 +164,36 @@ class AllTables:
         sql, parameters = self.format_args(sql, " AND ", kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
 
+    async def sort_worker_by_gym(self, telegram_id, **kwargs):
+        sql = (
+            "SELECT * FROM main_app_worker WHERE gym_id = ( "
+            "SELECT gym_id FROM main_app_worker "
+            "WHERE telegram_id = $1 AND gym_id IS NOT NULL ) "
+            "AND gym_id IS NOT NULL;"
+        )
+        return await self.execute(
+            sql,
+            telegram_id,
+            fetch=True,
+        )
+
+    async def update_worker(self, telegram_id, **kwargs):
+        sql = """
+        UPDATE main_app_worker
+        SET """
+        sql, parameters = (
+            self.format_args(sql, ", ", kwargs)
+            if len(kwargs) > 1
+            else self.format_args(sql, "", kwargs)
+        )
+        sql += f" WHERE telegram_id = ${len(kwargs)+1}"
+        return await self.execute(
+            sql,
+            *parameters,
+            telegram_id,
+            execute=True,
+        )
+
     async def add_gym(
         self,
         name: str,
@@ -207,9 +237,43 @@ class AllTables:
         sql, parameters = self.format_args(sql, " AND ", kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
 
+    async def select_gym_by_worker(self, telegram_id, **kwargs):
+        sql = (
+            "SELECT g.id AS gym_id, g.loc_lat, g.loc_long, g.waiting_location "
+            "FROM main_app_worker w "
+            "LEFT JOIN main_app_gym g ON g.id = w.gym_id "
+            "WHERE w.telegram_id = $1;"
+        )
+        return await self.execute(
+            sql,
+            telegram_id,
+            fetchrow=True,
+        )
+
+    async def update_gym_by_worker(self, telegram_id, **kwargs):
+        sql = """
+        UPDATE main_app_gym
+        SET """
+        sql, parameters = (
+            self.format_args(sql, ", ", kwargs)
+            if len(kwargs) > 1
+            else self.format_args(sql, "", kwargs)
+        )
+        sql += (
+            " WHERE id = ( SELECT gym_id FROM main_app_worker "
+            + f"WHERE telegram_id = ${len(kwargs)+1});"
+        )
+        return await self.execute(
+            sql,
+            *parameters,
+            telegram_id,
+            execute=True,
+        )
+
     async def balance_gym(self, telegram_id):
         sql = (
-            "SELECT g.name, g.loc_lat, g.loc_long, g.balance, g.date_end, g.is_active "
+            "SELECT g.id, g.name, g.loc_lat, g.loc_long, "
+            "g.balance, g.date_end, g.is_active "
             "FROM main_app_worker w "
             "LEFT JOIN main_app_gym g ON g.id = w.gym_id "
             "WHERE w.telegram_id = $1;"

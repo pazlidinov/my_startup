@@ -31,7 +31,7 @@ all_months = [
 
 
 @dp.callback_query_handler(lambda c: c.data == "client_new_qrcode")
-async def new_qr_code(call: types.CallbackQuery):
+async def new_qr_code_for_client(call: types.CallbackQuery):
     try:
         client = await db.select_client(telegram_id=str(call.from_user.id))
         path_img = client["qr_code"]
@@ -52,9 +52,7 @@ async def new_qr_code(call: types.CallbackQuery):
         )
     except Exception as err:
         logging.exception(err)
-        await call.answer(
-            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
-        )
+        await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
 
 
 @dp.callback_query_handler(lambda c: c.data == "client_balance")
@@ -66,12 +64,10 @@ async def client_active_balance(call: types.CallbackQuery):
         )
     except Exception as err:
         logging.exception(err)
-        return await call.answer(
-            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
-        )
+        return await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
     await call.message.delete()
     if client_balance == []:
-        return await call.answer("🚫 Aktiv to'lovlar topilmadi", show_alert=True)
+        return await call.answer("🚫 Aktiv to'lovlar topilmadi")
     send_text = "Faol bo'lgan to'lovlar:\n"
     for i, item in enumerate(client_balance, start=1):
         send_text += (
@@ -101,9 +97,7 @@ async def client_balance_by_month(call: types.CallbackQuery):
         )
     except Exception as err:
         logging.exception(err)
-        return await call.answer(
-            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
-        )
+        return await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
     await call.message.delete()
     if len(client_balance) == 0:
         return await call.message.answer(
@@ -143,9 +137,7 @@ async def client_statistics(call: types.CallbackQuery):
         )
     except Exception as err:
         logging.exception(err)
-        return await call.answer(
-            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
-        )
+        return await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
     await call.message.delete()
     if len(client_statistics) == 0:
         return await call.message.answer(
@@ -190,9 +182,7 @@ async def change_client_lang(call: types.CallbackQuery):
             telegram_id=str(call.from_user.id), language=call.data.split("_")[-1]
         )
         await call.message.delete()
-        await call.answer(
-            "☑️ Tabriklaymiz, til muvaffaqiyatli yangilandi", show_alert=True
-        )
+        await call.answer("☑️ Tabriklaymiz, til muvaffaqiyatli yangilandi")
         await call.message.answer_photo(
             open(MEDIA_DIR / f"{call.from_user.id}.png", "rb"),
             caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
@@ -200,6 +190,4 @@ async def change_client_lang(call: types.CallbackQuery):
         )
     except Exception as err:
         logging.exception(err)
-        await call.answer(
-            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
-        )
+        await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")

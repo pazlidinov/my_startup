@@ -13,12 +13,13 @@ class Gym(models.Model):
     name = models.CharField(max_length=150)
     loc_lat = models.FloatField()
     loc_long = models.FloatField()
-    # waiting_location = models.BooleanField(default=False)
+    waiting_location = models.BooleanField(default=False)
     secret_code = models.CharField(unique=True, max_length=10)
     qr_code = models.ImageField()
     lump_sum = models.PositiveIntegerField(default=0)
     balance = models.BigIntegerField(default=0)
     date_end = models.DateField(blank=True, null=True)
+    worker_count=models.PositiveSmallIntegerField(default=4)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
