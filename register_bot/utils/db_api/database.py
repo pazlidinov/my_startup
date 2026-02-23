@@ -239,7 +239,8 @@ class AllTables:
 
     async def select_gym_by_worker(self, telegram_id, **kwargs):
         sql = (
-            "SELECT g.id AS gym_id, g.loc_lat, g.loc_long, g.waiting_location "
+            "SELECT g.id AS gym_id, g.loc_lat, g.loc_long, "
+            "g.waiting_location, g.waiting_lump_sum "
             "FROM main_app_worker w "
             "LEFT JOIN main_app_gym g ON g.id = w.gym_id "
             "WHERE w.telegram_id = $1;"

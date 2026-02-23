@@ -10,7 +10,6 @@ import os
 from pathlib import Path
 from aiogram.types import InlineKeyboardButton, ReplyKeyboardRemove
 from keyboards.default import contact, location
-from . import echo
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MEDIA_DIR = BASE_DIR / "qr_code_img"
@@ -51,17 +50,32 @@ async def wait_Lum_sum(call: types.CallbackQuery):
         )
 
 
-@dp.message_handler(state=None)
+@dp.message_handler(lambda message: True, state=None)
 async def change_lump_sum(message: types.Message):
+    print("ok")
     text = message.text.strip()
     # ❌ Agar int bo‘lmasa, qayta so‘rash
     if not text.isdigit():
         await message.answer("❌ Iltimos, faqat **butun son** kiriting!")
         await message.delete()
         return
+
+    try:
+        is_director = dict(
+            await db.select_worker(telegram_id=str(message.from_user.id))
+        )["is_director"]
+        waiting_lump_sum = dict(
+            await db.select_gym_by_worker(telegram_id=str(message.from_user.id))
+        )["waiting_lump_sum"]
+    except Exception as err:
+        logging.exception(err)
+        await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+
+    # if not waiting_lump_sum:
+    #     await echo.bot_echo(message)
+    #     return
     # ✅ Raqamni int ga aylantiramiz
     amount = int(text)
-
     # Optional: minimal / maksimal cheklov
     MIN_AMOUNT = 1
     MAX_AMOUNT = 2147483647
@@ -71,24 +85,10 @@ async def change_lump_sum(message: types.Message):
         )
         await message.delete()
         return
-    try:
-        is_director = dict(
-            await db.select_worker(telegram_id=str(message.from_user.id))
-        )["is_director"]
-        waiting_lump_sum = await db.select_gym_by_worker(
-            telegram_id=str(message.from_user.id)
-        )["waiting_lump_sum"]
-    except Exception as err:
-        logging.exception(err)
-        await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
-
     if not is_director:
         await message.answer(
             "❗ Siz zal egasi bo'lmaganligiz uchun bir kunlik to'lovni o'zgartirolmaysiz."
         )
-    if not waiting_lump_sum:
-        await echo.bot_echo(message)
-        return
     if is_director and waiting_lump_sum:
         try:
             await db.update_gym_by_worker(
@@ -152,12 +152,13 @@ async def change_location(message: types.Message):
         is_director = dict(
             await db.select_worker(telegram_id=str(message.from_user.id))
         )["is_director"]
-        waiting_location = await db.select_gym_by_worker(
-            telegram_id=str(message.from_user.id)
+        waiting_location = dict(
+            await db.select_gym_by_worker(telegram_id=str(message.from_user.id))
         )["waiting_location"]
     except Exception as err:
         logging.exception(err)
         await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+
     if is_director and waiting_location:
         try:
             await db.update_gym_by_worker(
