@@ -52,7 +52,6 @@ async def wait_Lum_sum(call: types.CallbackQuery):
 
 @dp.message_handler(lambda message: True, state=None)
 async def change_lump_sum(message: types.Message):
-    print("ok")
     text = message.text.strip()
     # ❌ Agar int bo‘lmasa, qayta so‘rash
     if not text.isdigit():
@@ -61,9 +60,6 @@ async def change_lump_sum(message: types.Message):
         return
 
     try:
-        is_director = dict(
-            await db.select_worker(telegram_id=str(message.from_user.id))
-        )["is_director"]
         waiting_lump_sum = dict(
             await db.select_gym_by_worker(telegram_id=str(message.from_user.id))
         )["waiting_lump_sum"]
@@ -71,43 +67,53 @@ async def change_lump_sum(message: types.Message):
         logging.exception(err)
         await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
 
-    # if not waiting_lump_sum:
-    #     await echo.bot_echo(message)
-    #     return
-    # ✅ Raqamni int ga aylantiramiz
-    amount = int(text)
-    # Optional: minimal / maksimal cheklov
-    MIN_AMOUNT = 1
-    MAX_AMOUNT = 2147483647
-    if amount < MIN_AMOUNT or amount > MAX_AMOUNT:
-        await message.answer(
-            f"❌ Miqdor {MIN_AMOUNT}-{MAX_AMOUNT} oralig‘ida bo‘lishi kerak!"
-        )
-        await message.delete()
-        return
-    if not is_director:
-        await message.answer(
-            "❗ Siz zal egasi bo'lmaganligiz uchun bir kunlik to'lovni o'zgartirolmaysiz."
-        )
-    if is_director and waiting_lump_sum:
+    if waiting_lump_sum:
+        # ✅ Raqamni int ga aylantiramiz
+        amount = int(text)
+        # Optional: minimal / maksimal cheklov
+        MIN_AMOUNT = 1
+        MAX_AMOUNT = 2147483647
+        if amount < MIN_AMOUNT or amount > MAX_AMOUNT:
+            await message.answer(
+                f"❌ Miqdor {MIN_AMOUNT}-{MAX_AMOUNT} oralig‘ida bo‘lishi kerak!"
+            )
+            await message.delete()
+            return
         try:
-            await db.update_gym_by_worker(
-                telegram_id=str(message.from_user.id),
-                lump_sum=amount,
-                waiting_lump_sum=False,
-            )
-            await message.answer(
-                "☑️ Tabriklaymiz, joylabir kunlik to'lov muvaffaqiyatli yangilandi.",
-            )
-            await message.answer(
-                text="⚙️ Sozlamalar",
-                reply_markup=menu_gym.gym_settings_menu,
-            )
+            is_director = dict(
+                await db.select_worker(telegram_id=str(message.from_user.id))
+            )["is_director"]
         except Exception as err:
             logging.exception(err)
             await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
-    else:
-        await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+        if not is_director:
+            return await message.answer(
+                "❗ Siz zal egasi bo'lmaganligiz uchun bir kunlik to'lovni o'zgartirolmaysiz."
+            )
+
+        if is_director:
+            try:
+                await db.update_gym_by_worker(
+                    telegram_id=str(message.from_user.id),
+                    lump_sum=amount,
+                    waiting_lump_sum=False,
+                )
+                await message.answer(
+                    "☑️ Tabriklaymiz, joylabir kunlik to'lov muvaffaqiyatli yangilandi.",
+                )
+                return await message.answer(
+                    text="⚙️ Sozlamalar",
+                    reply_markup=menu_gym.gym_settings_menu,
+                )
+            except Exception as err:
+                logging.exception(err)
+                return await message.answer(
+                    "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+                )
+        else:
+            return await message.answer(
+                "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+            )
 
 
 @dp.callback_query_handler(lambda c: c.data == "gym_change_location")
@@ -149,39 +155,47 @@ async def wait_location(call: types.CallbackQuery):
 async def change_location(message: types.Message):
     await message.delete()
     try:
-        is_director = dict(
-            await db.select_worker(telegram_id=str(message.from_user.id))
-        )["is_director"]
         waiting_location = dict(
             await db.select_gym_by_worker(telegram_id=str(message.from_user.id))
         )["waiting_location"]
     except Exception as err:
         logging.exception(err)
         await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
-
-    if is_director and waiting_location:
+    if wait_location:
         try:
-            await db.update_gym_by_worker(
-                telegram_id=str(message.from_user.id),
-                loc_lat=message.location.latitude,
-                loc_long=message.location.longitude,
-                waiting_location=False,
-            )
-            await message.answer(
-                "☑️ Tabriklaymiz, joylashuv muvaffaqiyatli yangilandi.",
-                reply_markup=ReplyKeyboardRemove(),
-            )
-            await message.answer(
-                text="⚙️ Sozlamalar",
-                reply_markup=menu_gym.gym_settings_menu,
-            )
+            is_director = dict(
+                await db.select_worker(telegram_id=str(message.from_user.id))
+            )["is_director"]
         except Exception as err:
             logging.exception(err)
-            await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
-    else:
-        await message.answer(
-            "❗ Siz zal egasi bo'lmaganligiz uchun joylashuvni o'zgartirolmaysiz."
-        )
+            return await message.answer(
+                "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+            )
+        if is_director:
+            try:
+                await db.update_gym_by_worker(
+                    telegram_id=str(message.from_user.id),
+                    loc_lat=message.location.latitude,
+                    loc_long=message.location.longitude,
+                    waiting_location=False,
+                )
+                await message.answer(
+                    "☑️ Tabriklaymiz, joylashuv muvaffaqiyatli yangilandi.",
+                    reply_markup=ReplyKeyboardRemove(),
+                )
+                await message.answer(
+                    text="⚙️ Sozlamalar",
+                    reply_markup=menu_gym.gym_settings_menu,
+                )
+            except Exception as err:
+                logging.exception(err)
+                await message.answer(
+                    "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+                )
+        else:
+            await message.answer(
+                "❗ Siz zal egasi bo'lmaganligiz uchun joylashuvni o'zgartirolmaysiz."
+            )
 
 
 @dp.callback_query_handler(lambda c: c.data == "gym_new_qrcode")
