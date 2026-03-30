@@ -1,7 +1,7 @@
 from datetime import date
 from loader import dp
 from aiogram import types
-from keyboards.inline import langsKeyboard, menu_gym, monthsKeyboard
+from keyboards.inline import langsKeyboard, menu_gym, workerKeyboard
 from utils.others.secret_code import generate_code
 from utils.others.qr_code import generate_qr_code
 from utils.db_api.database import all_tables as db
@@ -14,6 +14,71 @@ from keyboards.default import contact, location
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MEDIA_DIR = BASE_DIR / "qr_code_img"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+@dp.callback_query_handler(lambda c: c.data == "gym_worker")
+async def show_worker(call: types.CallbackQuery):
+    await call.answer()
+    try:
+        all_worker = await db.sort_worker_by_gym(telegram_id=str(call.from_user.id))
+    except Exception as err:
+        logging.exception(err)
+        await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+    await call.message.delete()
+    if all_worker == []:
+        return await call.answer("🚫 Hodimlar topilmadi")
+    worker_list = {}
+    show_key = True
+    send_text = "👥 Hodimlar:\n"
+    for i, item in enumerate(all_worker, start=1):
+        send_text += (
+            f"<b>{i}) ✏️ Ismi:</b> <a href='tg://user?id={item['telegram_id']}'>"
+            + f"{item['first_name']}</a>\n"
+            + f"<b>📞 Telefon raqami:</b> +{item['phone_number']}\n"
+            + f"<b>📋 Role:</b> {'🕵️ Director' if item['is_director'] else '🧍‍♂️ Hodim'}\n"
+            + f"<b>⭕ Faolligi:</b> {'✅ Foal' if item['is_active'] else '❌ Foal emas'}\n"
+        )
+        if not item["is_director"]:
+            worker_list[item["first_name"]] = item["telegram_id"]
+            if item["telegram_id"] == call.from_user.id:
+                show_key = False
+
+    await call.message.answer(
+        text=send_text,
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+        reply_markup=workerKeyboard.get_worker_key(
+            show_key=show_key, worker_list=worker_list
+        ),
+    )
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("gym_woker_delete_"))
+async def delete_worker(call: types.CallbackQuery):
+    await call.answer()
+    try:
+        is_director = dict(await db.select_worker(telegram_id=str(call.from_user.id)))[
+            "is_director"
+        ]
+    except Exception as err:
+        logging.exception(err)
+        await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+    if is_director:
+        try:
+            worker = await db.select_worker(telegram_id=str(call.data.split("_")[-1]))
+            os.remove(MEDIA_DIR / f"{worker['telegram_id']}.png")
+            await db.update_worker(gym=None)
+            qr_code = generate_qr_code(worker["telegram_id"], worker["telegram_id"])
+        except Exception as err:
+            logging.exception(err)
+            await call.message.answer(
+                "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+            )
+        await call.message.delete()
+    else:
+        await call.message.answer(
+            "❗ Siz zal egasi bo'lmaganligiz uchun hodimni o'chira olmaysiz."
+        )
 
 
 @dp.callback_query_handler(lambda c: c.data == "gym_change_lump_sum")
@@ -32,6 +97,7 @@ async def wait_Lum_sum(call: types.CallbackQuery):
                 telegram_id=str(call.from_user.id),
                 waiting_lump_sum=True,
             )
+            await call.message.delete()
             await call.message.answer(
                 text="🔙 Sozlamalarga qaytish",
                 reply_markup=menu_gym.gym_back_settings,
@@ -98,6 +164,7 @@ async def change_lump_sum(message: types.Message):
                     lump_sum=amount,
                     waiting_lump_sum=False,
                 )
+                await message.delete()
                 await message.answer(
                     "☑️ Tabriklaymiz, joylabir kunlik to'lov muvaffaqiyatli yangilandi.",
                 )
@@ -132,6 +199,7 @@ async def wait_location(call: types.CallbackQuery):
                 telegram_id=str(call.from_user.id),
                 waiting_location=True,
             )
+            await call.message.delete()
             await call.message.answer(
                 text="🔙 Sozlamalarga qaytish",
                 reply_markup=menu_gym.gym_back_settings,
@@ -161,7 +229,7 @@ async def change_location(message: types.Message):
     except Exception as err:
         logging.exception(err)
         await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
-    if wait_location:
+    if waiting_location:
         try:
             is_director = dict(
                 await db.select_worker(telegram_id=str(message.from_user.id))

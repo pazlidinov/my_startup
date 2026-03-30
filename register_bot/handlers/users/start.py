@@ -120,9 +120,7 @@ async def for_client(call: types.CallbackQuery, state: FSMContext):
             secret_code=secret_code,
             qr_code=qr_code,
         )
-        await call.answer(
-            "☑️ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
-        )
+        await call.answer("✅ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz")
         await call.message.answer_photo(
             open(qr_code, "rb"),
             caption="⬆️ QrCodeni reseptionga ko'rsating\n⬇️ Zalning QrCodeni skanerlang",
@@ -130,9 +128,7 @@ async def for_client(call: types.CallbackQuery, state: FSMContext):
         )
     except Exception as err:
         logging.exception(err)
-        await call.message.answer(
-            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
-        )
+        await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
 
     await state.finish()
 
@@ -159,9 +155,7 @@ async def for_worker(call: types.CallbackQuery, state: FSMContext):
         await bot.delete_message(
             chat_id=call.message.chat.id, message_id=last_msg.message_id
         )
-        await call.answer(
-            "☑️ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz", show_alert=True
-        )
+        await call.answer("✅ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz")
         qr_code = generate_qr_code(data.get("telegram_id"), data.get("telegram_id"))
         await call.message.answer_photo(
             open(qr_code, "rb"),
@@ -172,9 +166,7 @@ async def for_worker(call: types.CallbackQuery, state: FSMContext):
         await bot.delete_message(
             chat_id=call.message.chat.id, message_id=last_msg.message_id
         )
-        await call.message.answer(
-            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.", show_alert=True
-        )
+        await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
     await state.finish()
 
 
@@ -277,7 +269,7 @@ async def lump_sum(message: types.Message, state: FSMContext):
             is_director=True,
         )
         last_msg = await message.answer(
-            "☑️ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz."
+            "✅ Tabriklaymiz, muvaffaqiyatli ro'yxatdan o'tdingiz."
         )
     except Exception as err:
         logging.exception(err)

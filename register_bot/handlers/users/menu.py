@@ -33,6 +33,17 @@ async def menu(message: types.Message):
                 reply_markup=menu_client.client_main_menu,
             )
         elif user["source"] == "gym":
+            try:
+                await db.update_gym_by_worker(
+                    telegram_id=str(message.from_user.id),
+                    waiting_lump_sum=False,
+                    waiting_location=False,
+                )
+            except Exception as err:
+                logging.exception(err)
+                await message.answer(
+                    "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+                )
             return await message.answer_photo(
                 open(MEDIA_DIR / f"{message.from_user.id}.png", "rb"),
                 caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",

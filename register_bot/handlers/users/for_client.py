@@ -71,11 +71,12 @@ async def client_active_balance(call: types.CallbackQuery):
     send_text = "Faol bo'lgan to'lovlar:\n"
     for i, item in enumerate(client_balance, start=1):
         send_text += (
-            f"<b>{i}) <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
+            f"<b>{i}) <a href='https://maps.google.com/?q="
+            + f"{item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
             + f"<b>💵 To'lov:</b> {item['price']}\n"
             + f"<b>📝 Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
             + f"<b>🗓️ Muddati:</b> {item['date_start']} / {item['date_end']}\n"
-            + f"<b>⭕ Faolligi:</b> {'☑️ Foal' if item['is_active'] else '❌ Foal emas'}\n"
+            + f"<b>⭕ Faolligi:</b> {'✅ Foal' if item['is_active'] else '❌ Foal emas'}\n"
         )
     await call.message.answer(
         text=send_text,

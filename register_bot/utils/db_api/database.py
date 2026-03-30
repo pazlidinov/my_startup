@@ -328,11 +328,11 @@ class AllTables:
         )
         return await self.execute(sql, telegram_id, year, month, fetch=True)
 
-    async def select_admin(self, column, **kwargs):
+    async def select_admin(self):
         # SQL_EXAMPLE = "SELECT column FROM main_app_admin
         # where id=1 AND Name='John'"
-        sql = f"SELECT {column} FROM main_app_admin"
-        return await self.execute(sql, fetchval=True)
+        sql = f"SELECT * FROM main_app_admin"
+        return await self.execute(sql, fetchrow=True)
 
 
 all_tables = AllTables()

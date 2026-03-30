@@ -20,7 +20,7 @@ class Gym(models.Model):
     waiting_lump_sum = models.BooleanField(default=False)
     balance = models.BigIntegerField(default=0)
     date_end = models.DateField(blank=True, null=True)
-    worker_count=models.PositiveSmallIntegerField(default=4)
+    worker_count = models.PositiveSmallIntegerField(default=4)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -119,6 +119,7 @@ class Admin(models.Model):
     amount = models.PositiveIntegerField(default=0)
     card_name = models.CharField(max_length=200)
     card_number = models.CharField(max_length=16)
+    gym_group_link = models.TextField()
 
     def __str__(self):
         return self.user_name
