@@ -96,7 +96,7 @@ class Registration(models.Model):
     )
     client = models.ForeignKey(
         Client,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         related_name="client_registration",
         blank=True,
         null=True,
@@ -104,7 +104,7 @@ class Registration(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     is_trainer = models.BooleanField(default=False)
     payment = models.ForeignKey(
-        Payment, on_delete=models.CASCADE, related_name="payment_registration"
+        Payment, on_delete=models.PROTECT, related_name="payment_registration"
     )
 
     def __str__(self):

@@ -61,7 +61,7 @@ async def menu(message: types.Message):
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith("menu_"))
-async def menu_for_client(call: types.CallbackQuery):
+async def menu_for_all(call: types.CallbackQuery):
     await call.answer()
     await call.message.delete()
     user_type = call.data.split("_")[-1]

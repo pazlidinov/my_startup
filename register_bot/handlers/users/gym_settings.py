@@ -24,6 +24,7 @@ async def show_worker(call: types.CallbackQuery):
     except Exception as err:
         logging.exception(err)
         await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+        return
     await call.message.delete()
     if all_worker == []:
         return await call.answer("🚫 Hodimlar topilmadi")
@@ -63,6 +64,7 @@ async def delete_worker(call: types.CallbackQuery):
     except Exception as err:
         logging.exception(err)
         await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+        return
     if is_director:
         try:
             worker = await db.select_worker(telegram_id=str(call.data.split("_")[-1]))
@@ -91,6 +93,7 @@ async def wait_Lum_sum(call: types.CallbackQuery):
     except Exception as err:
         logging.exception(err)
         await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+        return
     if is_director:
         try:
             await db.update_gym_by_worker(
@@ -132,6 +135,7 @@ async def change_lump_sum(message: types.Message):
     except Exception as err:
         logging.exception(err)
         await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+        return
 
     if waiting_lump_sum:
         # ✅ Raqamni int ga aylantiramiz
@@ -152,6 +156,7 @@ async def change_lump_sum(message: types.Message):
         except Exception as err:
             logging.exception(err)
             await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+            return
         if not is_director:
             return await message.answer(
                 "❗ Siz zal egasi bo'lmaganligiz uchun bir kunlik to'lovni o'zgartirolmaysiz."
@@ -178,9 +183,8 @@ async def change_lump_sum(message: types.Message):
                     "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
                 )
         else:
-            return await message.answer(
-                "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
-            )
+            await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+            return
 
 
 @dp.callback_query_handler(lambda c: c.data == "gym_change_location")
@@ -193,6 +197,7 @@ async def wait_location(call: types.CallbackQuery):
     except Exception as err:
         logging.exception(err)
         await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+        return
     if is_director:
         try:
             await db.update_gym_by_worker(
@@ -229,6 +234,7 @@ async def change_location(message: types.Message):
     except Exception as err:
         logging.exception(err)
         await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+        return
     if waiting_location:
         try:
             is_director = dict(
@@ -236,9 +242,8 @@ async def change_location(message: types.Message):
             )["is_director"]
         except Exception as err:
             logging.exception(err)
-            return await message.answer(
-                "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
-            )
+            await message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+            return
         if is_director:
             try:
                 await db.update_gym_by_worker(
@@ -260,6 +265,7 @@ async def change_location(message: types.Message):
                 await message.answer(
                     "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
                 )
+                return
         else:
             await message.answer(
                 "❗ Siz zal egasi bo'lmaganligiz uchun joylashuvni o'zgartirolmaysiz."
@@ -276,6 +282,7 @@ async def new_qr_code_for_gym(call: types.CallbackQuery):
     except Exception as err:
         logging.exception(err)
         await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+        return
     if is_director:
         try:
             secret_code = await generate_code(10)
@@ -306,6 +313,7 @@ async def new_qr_code_for_gym(call: types.CallbackQuery):
             await call.message.answer(
                 "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
             )
+            return
     else:
         await call.message.answer(
             "❗ Siz zal egasi bo'lmaganligiz uchun QRcodeni o'zgartirolmaysiz."

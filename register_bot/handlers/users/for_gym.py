@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 from loader import dp
 from aiogram import types
 from keyboards.inline import langsKeyboard, menu_gym, monthsKeyboard
@@ -10,19 +10,78 @@ import os
 from pathlib import Path
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+MEDIA_DIR = BASE_DIR / "qr_code_img"
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
-@dp.callback_query_handler(lambda c: c.data == "gym_balance")
-async def client_active_balance(call: types.CallbackQuery):
+
+@dp.callback_query_handler(lambda c: c.data == "gym_lum_sum")
+async def gym_lum_sum(call: types.CallbackQuery):
     await call.answer()
-    group_link_key = InlineKeyboardMarkup(
+    confirm_lump_sum = InlineKeyboardMarkup(
         inline_keyboard=[
             [
+                InlineKeyboardButton(text="✅ Ha", callback_data="confirm_lum_sum_yes"),
                 InlineKeyboardButton(
-                    text="🔎 Skanerlash", callback_data="client_scaner"
+                    text="❌ Yo'q", callback_data="confirm_lum_sum_no"
                 ),
             ],
         ]
     )
+    await call.message.delete()
+    return await call.message.answer(
+        "⚠️ Bir kunlik to'lov qlishni tasdiqlayszimi?", reply_markup=confirm_lump_sum
+    )
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("confirm_lum_sum_"))
+async def gym_lum_sum(call: types.CallbackQuery):
+    await call.answer()
+    answer_confirm = call.data.split("_")[-1]
+    if answer_confirm == "no":
+        await call.message.delete()
+        await call.message.answer("❗ Bir kunlik to'lov bekor qilindi.")
+        return await call.message.answer_photo(
+            open(MEDIA_DIR / f"{call.from_user.id}.png", "rb"),
+            caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",
+            reply_markup=menu_gym.gym_main_menu,
+        )
+    try:
+        gym = dict(await db.select_gym_by_worker(telegram_id=str(call.from_user.id)))
+    except Exception as err:
+        logging.exception(err)
+        return await call.message.answer(
+            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+        )
+
+    if not gym["is_active"]:
+        return await call.message.answer(
+            "❗ Sport zal aktiv holatda emas. Iltimos balansingizni tekshiring."
+        )
+    try:
+        payment_id = await db.add_payment_for_lump_sum(
+            gym_id=gym["gym_id"], lump_sum=gym["lump_sum"]
+        )
+        await db.add_registration_for_lump_sum(
+            gym_id=gym["gym_id"], payment_id=payment_id
+        )
+        await call.message.delete()
+        await call.message.answer("✅ Tabriklaymiz, bir kunlik to'lov qabul qilindi.")
+        return await call.message.answer_photo(
+            open(MEDIA_DIR / f"{call.from_user.id}.png", "rb"),
+            caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",
+            reply_markup=menu_gym.gym_main_menu,
+        )
+    except Exception as err:
+        logging.exception(err)
+        return await call.message.answer(
+            "❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring."
+        )
+
+
+@dp.callback_query_handler(lambda c: c.data == "gym_balance")
+async def gym_balance(call: types.CallbackQuery):
+    await call.answer()
     try:
         info_gym = dict(await db.balance_gym(telegram_id=str(call.from_user.id)))
         info_admin = await db.select_admin()
@@ -34,6 +93,9 @@ async def client_active_balance(call: types.CallbackQuery):
                         url=info_admin["gym_group_link"],
                     ),
                 ],
+                [
+                    InlineKeyboardButton(text="🔙 Menu", callback_data="menu_gym"),
+                ],
             ]
         )
         await call.message.answer(
@@ -44,8 +106,8 @@ async def client_active_balance(call: types.CallbackQuery):
             + f"<b>⭕ Faolligi:</b> {'✅ Foal' if info_gym['is_active'] else '❌ Foal emas'}"
             + f"\n\n\n"
             + f"<b>💲 To'lov uchun:</b>\n"
-            + f"{info_admin['card_number']}\n"
-            + f"{info_admin['card_name']}\n"
+            + f"💳 {info_admin['card_number']}\n"
+            + f"📇 {info_admin['card_name']}\n"
             + f"<b>💶 Oylik to'lov:</b> {info_admin['amount']} so'm\n\n"
             + f"<b>ℹ️ Eslatma:</b> To'lov cheki va zal 🆔 ID\n"
             + f"quyidagi guruhga yuboring\n",
@@ -53,13 +115,42 @@ async def client_active_balance(call: types.CallbackQuery):
             parse_mode="HTML",
             disable_web_page_preview=True,
         )
+        await call.message.delete()
     except Exception as err:
         logging.exception(err)
         await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
 
 
+@dp.callback_query_handler(lambda c: c.data == "gym_statistics")
+async def gym_statistics(call: types.CallbackQuery):
+    await call.answer()
+    now = datetime.now()
+    year = now.year
+    month = now.month
+    try:
+        registrtion_by_month = await db.select_registrations_by_worker(
+            telegram_id=str(call.from_user.id), year=year, month=month
+        )
+        print(registrtion_by_month)
+    except Exception as err:
+        logging.exception(err)
+        await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+    result_by_regitrtion = {}
+
+    for item in registrtion_by_month:
+        day = item["day"]
+
+        if day not in result_by_regitrtion:
+            result_by_regitrtion[day] = {"lump_sum": 0, "by_month": 0}
+
+        if item["client"] is None:
+            result_by_regitrtion[day]["lump_sum"] += 1
+        else:
+            result_by_regitrtion[day]["by_month"] += 1
+
+
 @dp.callback_query_handler(lambda c: c.data == "gym_settings")
-async def client_active_balance(call: types.CallbackQuery):
+async def gym_settigs(call: types.CallbackQuery):
     await call.answer()
     try:
         await db.update_gym_by_worker(

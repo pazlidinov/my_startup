@@ -239,8 +239,8 @@ class AllTables:
 
     async def select_gym_by_worker(self, telegram_id, **kwargs):
         sql = (
-            "SELECT g.id AS gym_id, g.loc_lat, g.loc_long, "
-            "g.waiting_location, g.waiting_lump_sum "
+            "SELECT g.id AS gym_id, g.loc_lat, g.loc_long, g.lump_sum, "
+            "g.waiting_location, g.waiting_lump_sum, g.is_active "
             "FROM main_app_worker w "
             "LEFT JOIN main_app_gym g ON g.id = w.gym_id "
             "WHERE w.telegram_id = $1;"
@@ -316,6 +316,16 @@ class AllTables:
         )
         return await self.execute(sql, telegram_id, year, month, fetch=True)
 
+    async def add_payment_for_lump_sum(self, gym_id, lump_sum):
+        sql = (
+            "INSERT INTO main_app_payment ( "
+            "gym_id, client_id, count, balanse, price, "
+            "date_start, date_end, is_trainer, is_active ) "
+            "VALUES ($1, NULL, 1, 1, $2, CURRENT_DATE, CURRENT_DATE, FALSE, FALSE) "
+            "RETURNING id "
+        )
+        return await self.execute(sql, gym_id, lump_sum, fetchval=True)
+
     async def select_registrations_for_client(self, telegram_id, year, month):
         sql = (
             "SELECT r.*, g.name AS gym_name, "
@@ -327,6 +337,27 @@ class AllTables:
             "AND EXTRACT(MONTH FROM r.date) = $3;"
         )
         return await self.execute(sql, telegram_id, year, month, fetch=True)
+
+    async def select_registrations_by_worker(self, telegram_id, year, month):
+        sql = (
+            "SELECT r.client_id, "
+            "CAST(EXTRACT(DAY FROM r.date) AS INT) AS day "
+            "FROM main_app_registration r "
+            "JOIN main_app_gym g ON g.id = r.gym_id "
+            "JOIN main_app_worker w ON w.gym_id = g.id "
+            "WHERE w.telegram_id = $1 "
+            "AND EXTRACT(YEAR FROM r.date) = $2 "
+            "AND EXTRACT(MONTH FROM r.date) = $3;"
+        )
+        return await self.execute(sql, telegram_id, year, month, fetch=True)
+
+    async def add_registration_for_lump_sum(self, gym_id, payment_id):
+        sql = (
+            "INSERT INTO main_app_registration ( "
+            "gym_id, client_id, date, is_trainer, payment_id ) "
+            "VALUES ($1, NULL, NOW(), FALSE, $2) "
+        )
+        return await self.execute(sql, gym_id, payment_id, execute=True)
 
     async def select_admin(self):
         # SQL_EXAMPLE = "SELECT column FROM main_app_admin
