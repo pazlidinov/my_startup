@@ -1,18 +1,33 @@
-from datetime import datetime
-from loader import dp
+from datetime import date
+from loader import bot, dp
 from aiogram import types
 from keyboards.inline import langsKeyboard, menu_gym, monthsKeyboard
 from utils.others.secret_code import generate_code
-from utils.others.qr_code import generate_qr_code
+from utils.others.diagram_for_statistics import create_chart, sort_by_day
 from utils.db_api.database import all_tables as db
 import logging
 import os
 from pathlib import Path
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InputMediaPhoto, InputFile, MediaGroup
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MEDIA_DIR = BASE_DIR / "qr_code_img"
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+all_months = [
+    "Yanvar",
+    "Fevral",
+    "Mart",
+    "Aprel",
+    "May",
+    "Iyun",
+    "Iyul",
+    "Avgust",
+    "Sentabr",
+    "Oktyabr",
+    "Noyabr",
+    "Dekabr",
+]
 
 
 @dp.callback_query_handler(lambda c: c.data == "gym_lum_sum")
@@ -65,13 +80,27 @@ async def gym_lum_sum(call: types.CallbackQuery):
         await db.add_registration_for_lump_sum(
             gym_id=gym["gym_id"], payment_id=payment_id
         )
-        await call.message.delete()
-        await call.message.answer("✅ Tabriklaymiz, bir kunlik to'lov qabul qilindi.")
-        return await call.message.answer_photo(
-            open(MEDIA_DIR / f"{call.from_user.id}.png", "rb"),
-            caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",
-            reply_markup=menu_gym.gym_main_menu,
-        )
+        all_worker = await db.sort_worker_by_gym(telegram_id=str(call.from_user.id))
+        for item in all_worker:
+            if item["telegram_id"] == str(call.from_user.id):
+                await call.message.delete()
+                await call.message.answer(
+                    "✅ Tabriklaymiz, bir kunlik to'lov qabul qilindi."
+                )
+                await call.message.answer_photo(
+                    open(MEDIA_DIR / f"{call.from_user.id}.png", "rb"),
+                    caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",
+                    reply_markup=menu_gym.gym_main_menu,
+                )
+                continue
+            await bot.send_message(
+                chat_id=item["telegram_id"],
+                text=f"✅ <a href='tg://user?id={item['telegram_id']}'>"
+                + f"{call.from_user.first_name}</a> "
+                + f"tomonidan bir kunlik to'lov qabul qilindi.",
+                parse_mode="HTML",
+                disable_web_page_preview=True,
+            )
     except Exception as err:
         logging.exception(err)
         return await call.message.answer(
@@ -121,32 +150,56 @@ async def gym_balance(call: types.CallbackQuery):
         await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
 
 
-@dp.callback_query_handler(lambda c: c.data == "gym_statistics")
-async def gym_statistics(call: types.CallbackQuery):
+@dp.callback_query_handler(lambda c: c.data.startswith("gym_statistics"))
+async def gym_statistics_by_month(call: types.CallbackQuery):
     await call.answer()
-    now = datetime.now()
-    year = now.year
-    month = now.month
+    if "month" in call.data:
+        data_date = call.data.split("_")[-1]
+        year = int(data_date.split("-")[0])
+        month = int(data_date.split("-")[1])
+    else:
+        today = date.today()
+        year = int(today.year)
+        month = int(today.month)
     try:
-        registrtion_by_month = await db.select_registrations_by_worker(
+        registration_by_month = await db.select_registrations_by_worker(
             telegram_id=str(call.from_user.id), year=year, month=month
         )
-        print(registrtion_by_month)
+        payments_by_month = await db.select_payment_by_worker(
+            telegram_id=str(call.from_user.id), year=year, month=month
+        )
     except Exception as err:
         logging.exception(err)
-        await call.message.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
-    result_by_regitrtion = {}
-
-    for item in registrtion_by_month:
-        day = item["day"]
-
-        if day not in result_by_regitrtion:
-            result_by_regitrtion[day] = {"lump_sum": 0, "by_month": 0}
-
-        if item["client"] is None:
-            result_by_regitrtion[day]["lump_sum"] += 1
-        else:
-            result_by_regitrtion[day]["by_month"] += 1
+        return await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+    await call.message.delete()
+    if len(registration_by_month) != 0:
+        result_by_regitrtion = sort_by_day(sql_response=registration_by_month)
+        registration_img = create_chart(
+            data=result_by_regitrtion, year=year, month=all_months[month - 1]
+        )
+        await call.message.answer_photo(
+            photo=InputFile(registration_img, filename="reg.png"),
+            caption="📊 Mijozlar oqimi",
+        )
+    if len(payments_by_month) != 0:
+        result_by_payments = sort_by_day(sql_response=payments_by_month)
+        payments_img = create_chart(
+            data=result_by_payments,
+            year=year,
+            month=all_months[month - 1],
+            payments=True,
+        )
+        await call.message.answer_photo(
+            photo=InputFile(payments_img, filename="pay.png"), caption="💰 To'lovlar"
+        )
+    if len(registration_by_month) == 0 and len(payments_by_month) == 0:
+        send_text = f"🚫 {year}-yil {all_months[month-1]} oyida ma'lumotlar topilmadi"
+    else:
+        send_text = "📋 Kerakli oyni tanlang."
+    await call.message.answer(
+        text=send_text,
+        reply_markup=monthsKeyboard.get_months_key("gym", "statistics"),
+    )
 
 
 @dp.callback_query_handler(lambda c: c.data == "gym_settings")

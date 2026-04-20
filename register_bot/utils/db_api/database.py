@@ -326,6 +326,18 @@ class AllTables:
         )
         return await self.execute(sql, gym_id, lump_sum, fetchval=True)
 
+    async def select_payment_by_worker(self, telegram_id, year, month):
+        sql = (
+            "SELECT p.client_id, p.price, "
+            "CAST(EXTRACT(DAY FROM p.date_start) AS INT) AS day "
+            "FROM main_app_payment p "
+            "JOIN main_app_worker w ON w.gym_id = p.gym_id "
+            "WHERE w.telegram_id = $1 "
+            "AND EXTRACT(YEAR FROM p.date_start) = $2 "
+            "AND EXTRACT(MONTH FROM p.date_start) = $3 "
+        )
+        return await self.execute(sql, telegram_id, year, month, fetch=True)
+
     async def select_registrations_for_client(self, telegram_id, year, month):
         sql = (
             "SELECT r.*, g.name AS gym_name, "
@@ -343,8 +355,7 @@ class AllTables:
             "SELECT r.client_id, "
             "CAST(EXTRACT(DAY FROM r.date) AS INT) AS day "
             "FROM main_app_registration r "
-            "JOIN main_app_gym g ON g.id = r.gym_id "
-            "JOIN main_app_worker w ON w.gym_id = g.id "
+            "JOIN main_app_worker w ON w.gym_id = r.gym_id "
             "WHERE w.telegram_id = $1 "
             "AND EXTRACT(YEAR FROM r.date) = $2 "
             "AND EXTRACT(MONTH FROM r.date) = $3;"

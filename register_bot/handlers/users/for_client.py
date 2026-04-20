@@ -55,65 +55,73 @@ async def new_qr_code_for_client(call: types.CallbackQuery):
         await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
 
 
-@dp.callback_query_handler(lambda c: c.data == "client_balance")
-async def client_active_balance(call: types.CallbackQuery):
-    await call.answer()
-    try:
-        client_balance = await db.select_payment_for_balance(
-            telegram_id=str(call.from_user.id)
-        )
-    except Exception as err:
-        logging.exception(err)
-        return await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
-    await call.message.delete()
-    if client_balance == []:
-        return await call.answer("🚫 Aktiv to'lovlar topilmadi")
-    send_text = "Faol bo'lgan to'lovlar:\n"
-    for i, item in enumerate(client_balance, start=1):
-        send_text += (
-            f"<b>{i}) <a href='https://maps.google.com/?q="
-            + f"{item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
-            + f"<b>💵 To'lov:</b> {item['price']}\n"
-            + f"<b>📝 Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
-            + f"<b>🗓️ Muddati:</b> {item['date_start']} / {item['date_end']}\n"
-            + f"<b>⭕ Faolligi:</b> {'✅ Foal' if item['is_active'] else '❌ Foal emas'}\n"
-        )
-    await call.message.answer(
-        text=send_text,
-        parse_mode="HTML",
-        disable_web_page_preview=True,
-        reply_markup=monthsKeyboard.get_months_key("client", "balance"),
-    )
+# @dp.callback_query_handler(lambda c: c.data == "client_balance")
+# async def client_active_balance(call: types.CallbackQuery):
+#     await call.answer()
+#     try:
+#         client_balance = await db.select_payment_for_balance(
+#             telegram_id=str(call.from_user.id)
+#         )
+#     except Exception as err:
+#         logging.exception(err)
+#         return await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+#     await call.message.delete()
+#     if len(client_balance) == 0:
+#         send_text = "🚫 Aktiv to'lovlar topilmadi"
+#     else:
+#         send_text = "Faol bo'lgan to'lovlar:\n"
+#         for i, item in enumerate(client_balance, start=1):
+#             send_text += (
+#                 f"<b>{i}) <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
+#                 + f"<b>💵 To'lov:</b> {item['price']}\n"
+#                 + f"<b>📝 Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
+#                 + f"<b>🗓️ Muddati:</b> {item['date_start']} / {item['date_end']}\n"
+#                 + f"<b>⭕ Faolligi:</b> {'✅ Foal' if item['is_active'] else '❌ Foal emas'}\n"
+#             )
+#     await call.message.answer(
+#         text=send_text,
+#         parse_mode="HTML",
+#         disable_web_page_preview=True,
+#         reply_markup=monthsKeyboard.get_months_key("client", "balance"),
+#     )
 
 
-@dp.callback_query_handler(lambda c: c.data.startswith("client_balance_month"))
+@dp.callback_query_handler(lambda c: c.data.startswith("client_balance"))
 async def client_balance_by_month(call: types.CallbackQuery):
     await call.answer()
-    data_date = call.data.split("_")[-1]
-    year = data_date.split("-")[0]
-    month = data_date.split("-")[1]
+    if "month" in call.data:
+        data_date = call.data.split("_")[-1]
+        year = int(data_date.split("-")[0])
+        month = int(data_date.split("-")[1])
+    else:
+        today = date.today()
+        year = int(today.year)
+        month = int(today.month)
     try:
-        client_balance = await db.select_payment_by_month(
-            telegram_id=str(call.from_user.id), year=int(year), month=int(month)
-        )
+        if "month" in call.data:
+            client_balance = await db.select_payment_by_month(
+                telegram_id=str(call.from_user.id), year=year, month=month
+            )
+        else:
+            client_balance = await db.select_payment_for_balance(
+                telegram_id=str(call.from_user.id)
+            )
     except Exception as err:
         logging.exception(err)
         return await call.answer("❗ Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
     await call.message.delete()
     if len(client_balance) == 0:
-        return await call.message.answer(
-            text=f"🚫 {year}-yil {all_months[int(month)-1]} oyida to'lovlar topilmadi",
-            reply_markup=monthsKeyboard.get_months_key("client", "balance"),
-        )
-    send_text = f"{year}-yil {all_months[int(month)-1]} oyidagi to'lovlar:\n"
-    for i, item in enumerate(client_balance, start=1):
-        send_text += (
-            f"<b>{i}) <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
-            + f"<b>💵 To'lov:</b> {item['price']}\n"
-            + f"<b>📝 Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
-            + f"<b>🗓️ Muddati:</b> {item['date_start']} / {item['date_end']}\n"
-            + f"<b>⭕ Faolligi:</b> {'☑️ Foal' if item['is_active'] else '❌ Foal emas'}\n"
-        )
+        send_text = f"🚫 {year}-yil {all_months[month-1]} oyida to'lovlar topilmadi"
+    else:
+        send_text = f"{year}-yil {all_months[month-1]} oyidagi to'lovlar:\n"
+        for i, item in enumerate(client_balance, start=1):
+            send_text += (
+                f"<b>{i}) <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['name']}</a></b>\n"
+                + f"<b>💵 To'lov:</b> {item['price']}\n"
+                + f"<b>📝 Foydalanilgan:</b> {item['count']}/{item['balanse']}\n"
+                + f"<b>🗓️ Muddati:</b> {item['date_start']} / {item['date_end']}\n"
+                + f"<b>⭕ Faolligi:</b> {'☑️ Foal' if item['is_active'] else '❌ Foal emas'}\n"
+            )
     return await call.message.answer(
         text=send_text,
         parse_mode="HTML",
@@ -125,16 +133,17 @@ async def client_balance_by_month(call: types.CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data.startswith("client_statistics"))
 async def client_statistics(call: types.CallbackQuery):
     await call.answer()
-    if len(call.data.split("_")) == 2:
-        today = date.today()
-        year, month = today.year, today.month
+    if "month" in call.data:
+        data_date = call.data.split("_")[-1]
+        year = int(data_date.split("-")[0])
+        month = int(data_date.split("-")[1])
     else:
-        data_date = call.data.split("_")
-        year = data_date[-1].split("-")[0]
-        month = data_date[-1].split("-")[1]
+        today = date.today()
+        year = int(today.year)
+        month = int(today.month)
     try:
         client_statistics = await db.select_registrations_for_client(
-            telegram_id=str(call.from_user.id), year=int(year), month=int(month)
+            telegram_id=str(call.from_user.id), year=year, month=month
         )
     except Exception as err:
         logging.exception(err)
@@ -142,13 +151,15 @@ async def client_statistics(call: types.CallbackQuery):
     await call.message.delete()
     if len(client_statistics) == 0:
         return await call.message.answer(
-            text=f"🚫 {year}-yil {all_months[int(month)-1]} oyida foallik topilmadi",
+            text=f"🚫 {year}-yil {all_months[month-1]} oyida foallik topilmadi",
             reply_markup=monthsKeyboard.get_months_key("client", "statistics"),
         )
-    send_text = f"{year}-yil {all_months[int(month)-1]} oyidagi faollik:\n"
+    send_text = f"{year}-yil {all_months[month-1]} oyidagi faollik:\n"
     for i, item in enumerate(client_statistics, start=1):
         send_text += (
-            f"<b>{i}) <a href='https://maps.google.com/?q={item['loc_lat']},{item['loc_long']}'>{item['gym_name']}</a></b>\n"
+            f"<b>{i}) <a href='https://maps.google.com/?"
+            + f"q={item['loc_lat']},{item['loc_long']}'>"
+            + f"{item['gym_name']}</a></b>\n"
             + f"<b>🗓️ Sana:</b> {item['date'].strftime('%Y-%m-%d %H:%M:%S')}\n"
             + f"<b>💵 To'lov:</b> {item['date_start']} kungi to'lov asosida\n"
         )

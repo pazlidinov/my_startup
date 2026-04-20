@@ -11,6 +11,7 @@ django = "*"
 psycopg2-binary = "*"
 pillow = "*"
 qrcode = "*"
+matplotlib = "*"
 
 [dev-packages]
 

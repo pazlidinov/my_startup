@@ -1,5 +1,5 @@
 from datetime import date
-from loader import dp
+from loader import dp, bot
 from aiogram import types
 from keyboards.inline import langsKeyboard, menu_gym, workerKeyboard
 from utils.others.secret_code import generate_code
@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 from aiogram.types import InlineKeyboardButton, ReplyKeyboardRemove
 from keyboards.default import contact, location
+import asyncio
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MEDIA_DIR = BASE_DIR / "qr_code_img"
@@ -295,19 +296,28 @@ async def new_qr_code_for_gym(call: types.CallbackQuery):
             all_worker = await db.sort_worker_by_gym(telegram_id=str(call.from_user.id))
             for item in all_worker:
                 if item["telegram_id"] == str(call.from_user.id):
+                    await call.message.delete()
+                    await call.message.answer(
+                        "✅ Tabriklaymiz, QrCode muvaffaqiyatli yangilandi."
+                    )
+                    await call.message.answer_photo(
+                        open(MEDIA_DIR / f"{item['telegram_id']}.png", "rb"),
+                        caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",
+                        reply_markup=menu_gym.gym_main_menu,
+                    )
                     continue
                 os.remove(MEDIA_DIR / f"{item['telegram_id']}.png")
                 qr_code = generate_qr_code(item["telegram_id"], secret_code)
-
-            await call.message.delete()
-            await call.message.answer(
-                "☑️ Tabriklaymiz, QrCode muvaffaqiyatli yangilandi."
-            )
-            return await call.message.answer_photo(
-                open(MEDIA_DIR / f"{call.from_user.id}.png", "rb"),
-                caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",
-                reply_markup=menu_gym.gym_main_menu,
-            )
+                await bot.send_message(
+                    chat_id=item["telegram_id"],
+                    text="⚠️ Sport zal QrCode yangilangandi!",
+                )
+                await call.message.answer_photo(
+                    open(MEDIA_DIR / f"{item['telegram_id']}.png", "rb"),
+                    caption="⬆️ QrCodeni mijozga ko'rsating\n⬇️ Mijozning QrCodeni skanerlang",
+                    reply_markup=menu_gym.gym_main_menu,
+                )
+                await asyncio.sleep(0.05)
         except Exception as err:
             logging.exception(err)
             await call.message.answer(
