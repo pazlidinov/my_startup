@@ -1,0 +1,125 @@
+from django.db import models
+
+
+# Create your models here.
+Languages = (
+    ("lotin", "Lotincha"),
+    ("kiril", "Кирилча"),
+    ("rus", " Русский язык"),
+)
+
+
+class Gym(models.Model):
+    name = models.CharField(max_length=150)
+    loc_lat = models.FloatField()
+    loc_long = models.FloatField()
+    waiting_location = models.BooleanField(default=False)
+    secret_code = models.CharField(unique=True, max_length=10)
+    qr_code = models.ImageField()
+    lump_sum = models.PositiveIntegerField(default=0)
+    waiting_lump_sum = models.BooleanField(default=False)
+    balance = models.BigIntegerField(default=0)
+    date_end = models.DateField(blank=True, null=True)
+    worker_count = models.PositiveSmallIntegerField(default=4)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Worker(models.Model):
+    gym = models.ForeignKey(
+        Gym, on_delete=models.SET_NULL, related_name="gym_worker", blank=True, null=True
+    )
+    user_name = models.CharField(max_length=100, blank=True, null=True)
+    first_name = models.CharField(max_length=66)
+    last_name = models.CharField(max_length=66, blank=True, null=True)
+    telegram_id = models.CharField(unique=True, max_length=20)
+    phone_number = models.CharField(max_length=25)
+    language = models.CharField(choices=Languages, max_length=25)
+    is_director = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.user_name
+
+
+class Client(models.Model):
+    user_name = models.CharField(max_length=100, blank=True, null=True)
+    first_name = models.CharField(max_length=66)
+    last_name = models.CharField(max_length=66, blank=True, null=True)
+    telegram_id = models.CharField(unique=True, max_length=20)
+    phone_number = models.CharField(max_length=25)
+    language = models.CharField(choices=Languages, max_length=25)
+    secret_code = models.CharField(unique=True, max_length=10)
+    qr_code = models.ImageField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.user_name
+
+
+class Payment(models.Model):
+    gym = models.ForeignKey(
+        Gym,
+        on_delete=models.SET_NULL,
+        related_name="gym_payment",
+        blank=True,
+        null=True,
+    )
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.SET_NULL,
+        related_name="client_payment",
+        blank=True,
+        null=True,
+    )
+    count = models.PositiveSmallIntegerField(default=0)
+    balanse = models.PositiveSmallIntegerField(blank=True, null=True)
+    price = models.BigIntegerField(default=0)
+    date_start = models.DateField(auto_now_add=True)
+    date_end = models.DateField(blank=True, null=True)
+    is_trainer = models.BooleanField(default=False)
+    is_active = models.BooleanField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.gym}_{self.client}"
+
+
+class Registration(models.Model):
+    gym = models.ForeignKey(
+        Gym,
+        on_delete=models.SET_NULL,
+        related_name="gym_registration",
+        blank=True,
+        null=True,
+    )
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.PROTECT,
+        related_name="client_registration",
+        blank=True,
+        null=True,
+    )
+    date = models.DateTimeField(auto_now_add=True)
+    is_trainer = models.BooleanField(default=False)
+    payment = models.ForeignKey(
+        Payment, on_delete=models.PROTECT, related_name="payment_registration"
+    )
+
+    def __str__(self):
+        return f"{self.gym}___{self.client}"
+
+
+class Admin(models.Model):
+    user_name = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=25)
+    telegram_id = models.CharField(unique=True, max_length=20)
+    free_days = models.PositiveIntegerField(default=0)
+    amount = models.PositiveIntegerField(default=0)
+    card_name = models.CharField(max_length=200)
+    card_number = models.CharField(max_length=16)
+    gym_group_link = models.TextField()
+
+    def __str__(self):
+        return self.user_name

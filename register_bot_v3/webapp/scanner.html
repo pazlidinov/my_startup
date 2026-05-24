@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner Pro</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header { text-align: center; margin-bottom: 25px; }
+        h2 { font-size: 1.6rem; color: #f1f5f9; }
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 2px solid #334155;
+            background: #1e293b;
+            position: relative;
+        }
+        #reader__dashboard, #reader__camera_selection, #reader img { display: none !important; }
+        #reader video { border-radius: 20px !important; object-fit: cover !important; }
+        .status-box {
+            margin-top: 25px;
+            padding: 15px;
+            background: #1e293b;
+            border-radius: 12px;
+            border-left: 4px solid #06b6d4;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .scan-line {
+            position: absolute;
+            top: 15%; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, transparent, #06b6d4, transparent);
+            box-shadow: 0 0 15px #06b6d4;
+            animation: moveLine 2.5s ease-in-out infinite;
+        }
+        @keyframes moveLine {
+            0%, 100% { top: 15%; }
+            50% { top: 85%; }
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.9);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loading" class="loading-overlay">Yuborilmoqda...</div>
+
+    <div class="header">
+        <h2>QR Skaner</h2>
+        <p style="color: #94a3b8;">Kodni ramka ichiga joylashtiring</p>
+    </div>
+
+    <div id="reader">
+        <div class="scan-line" id="line"></div>
+    </div>
+
+    <div class="status-box" id="status">Kamera yuklanmoqda...</div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        const statusDiv = document.getElementById("status");
+        const loadingOverlay = document.getElementById("loading");
+        let html5QrCode;
+
+        tg.ready();
+        tg.expand();
+
+        async function initScanner() {
+            html5QrCode = new Html5Qrcode("reader");
+            try {
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 20, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+                    onScanSuccess
+                );
+                statusDiv.innerText = "Skaner faol.";
+            } catch (err) {
+                statusDiv.innerText = "Kameraga ruxsat berilmadi!";
+            }
+        }
+
+        function onScanSuccess(decodedText) {
+            // Skanerni to'xtatish
+            html5QrCode.stop();
+            document.getElementById("line").style.display = "none";
+            
+            // Yuklanish holati
+            loadingOverlay.style.display = "flex";
+            statusDiv.innerText = "Backendga yuborilmoqda...";
+
+            // API ga yuborish (Localhost faqat lokal test uchun ishlaydi!)
+            fetch("https://5024-213-230-122-248.ngrok-free.app", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    init_data: tg.initData, // Bot backendida tekshirish uchun
+                    qr_text: decodedText
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                statusDiv.innerText = "Muvaffaqiyatli yuborildi!";
+                // 1 soniya kutib yopish
+                setTimeout(() => tg.close(), 1000);
+            })
+            .catch(err => {
+                loadingOverlay.style.display = "none";
+                statusDiv.style.borderLeftColor = "#ef4444";
+                statusDiv.innerText = "Xato: Serverga ulanib bo'lmadi!";
+                console.error(err);
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', initScanner);
+    </script>
+</body>
+</html>
