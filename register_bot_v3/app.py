@@ -1,69 +1,81 @@
 import asyncio
+import json
+import urllib.parse
 from aiohttp import web
 from aiogram import Bot, Dispatcher
-from loader import bot
-import middlewares, filters, handlers
-from middlewares import ThrottlingMiddleware
-from utils.notify_admins import on_startup_notify
-from utils.set_bot_commands import set_default_commands
-from utils.db_api.database import all_tables
+from loader import bot  # bot obyekti va token loader.py dan kelmoqda
+import handlers  # handlerlarni import qilish
 
 # ✅ QR ma'lumotini qabul qiluvchi endpoint
 async def api_qr(request):
-    print('ok')
-    data = await request.json()
-    init_data = data.get("init_data", "")
-    qr_text = data.get("qr_text", "")
+    print("--- Yangi so'rov keldi ---")
+    try:
+        data = await request.json()
+        init_data = data.get("init_data", "")
+        qr_text = data.get("qr_text", "")
 
-    # initData dan user_id olish
-    user_id = None
-    for part in init_data.split("&"):
-        if part.startswith("user="):
-            import json, urllib.parse
-            user_json = urllib.parse.unquote(part[5:])
-            user_id = json.loads(user_json).get("id")
-            break
+        print(f"Skanerlangan matn: {qr_text}")
 
-    if user_id:
-        await bot.send_message(user_id, f"📷 Skanerlandi:\n{qr_text}")
+        # initData dan user_id ni xavfsiz olish
+        user_id = None
+        if init_data:
+            params = dict(urllib.parse.parse_qsl(init_data))
+            if "user" in params:
+                user_data = json.loads(params["user"])
+                user_id = user_data.get("id")
 
-    return web.json_response({"ok": True})
+        if user_id:
+            try:
+                await bot.send_message(user_id, f"📷 QR Kod skanerlandi:\n\n`{qr_text}`", parse_mode="Markdown")
+                print(f"✅ Xabar yuborildi: {user_id}")
+            except Exception as e:
+                print(f"❌ Bot xabar yubora olmadi: {e}")
+        else:
+            print("⚠️ User ID topilmadi (initData xato yoki bo'sh)")
 
-async def on_startup(bot: Bot):
-    await all_tables.connect()
-    await set_default_commands(bot)
-    await on_startup_notify(bot)
+        return web.json_response({"ok": True, "status": "sent"})
+
+    except Exception as e:
+        print(f"❌ Server ichki xatosi: {e}")
+        return web.json_response({"ok": False, "error": str(e)}, status=500)
+
+# ✅ CORS Middleware (Brauzer bloklamasligi uchun)
+async def cors_middleware(app, handler):
+    async def middleware(request):
+        if request.method == "OPTIONS":
+            return web.Response(headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, ngrok-skip-browser-warning",
+            })
+        response = await handler(request)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
+    return middleware
 
 async def main():
+    # Dispatcher sozlamalari
     dp = Dispatcher()
-    dp.update.middleware(ThrottlingMiddleware())
     dp.include_router(handlers.router)
-    await on_startup(bot)
 
-    # ✅ Aiohttp server
-    app = web.Application()
+    # Aiohttp ilovasi
+    app = web.Application(middlewares=[cors_middleware])
     app.router.add_post("/api/qr", api_qr)
 
-    CORS - WebApp dan so'rov kelishi uchun
-    async def cors_handler(request):
-        return web.Response(headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Content-Type"
-        })
-    app.router.add_route("OPTIONS", "/api/qr", cors_handler)
-
+    # Serverni sozlash
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", 8080)
     await site.start()
 
-    print("✅ Server: http://localhost:8080")
-    print("✅ Bot ishga tushdi!")
+    print("🚀 API Server: http://localhost:8080")
+    print("🤖 Bot polling rejimida ishga tushdi...")
 
-    await dp.start_polling(
-        bot,
-        allowed_updates=["message", "callback_query"]
-    )
+    # Bot va API ni birga ishga tushirish
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        print("To'xtatildi")

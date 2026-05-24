@@ -26,8 +26,7 @@ MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 @router.message(CommandStart())
 @router.message(Command("menu"))
 async def bot_start(message: Message, state: FSMContext):
-    await message.delete()
-    await message.answer(".", reply_markup=ReplyKeyboardRemove())
+    await message.delete() 
     try:
         user_data = await db.check_user(telegram_id=str(message.from_user.id))
         if user_data is None:

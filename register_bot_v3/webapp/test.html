@@ -89,8 +89,8 @@
         const loadingOverlay = document.getElementById("loading");
         let html5QrCode;
 
-        tg.ready();
-        tg.expand();
+        // tg.ready();
+        // tg.expand();
 
         async function initScanner() {
             html5QrCode = new Html5Qrcode("reader");
@@ -105,21 +105,24 @@
                 statusDiv.innerText = "Kameraga ruxsat berilmadi!";
             }
         }
+        console.log('ok')
         
         function onScanSuccess(decodedText) {
-            // Skanerni to'xtatish           
-            html5QrCode.stop();     
-           
+            // Skanerni to'xtatish
+            console.log('ok2')
+            html5QrCode.stop();
+            document.getElementById("line").style.display = "none";
             
+            console.log('ok3')
             // Yuklanish holati
             loadingOverlay.style.display = "flex";
             statusDiv.innerText = "Backendga yuborilmoqda...";
-         
+            
+            console.log('ok4')
             // API ga yuborish (Localhost faqat lokal test uchun ishlaydi!)
-            fetch("https://6428-213-230-122-248.ngrok-free.app/api/qr", {
+            fetch(" https://4588-37-110-214-145.ngrok-free.app/api/qr", {
                 method: "POST",
-                headers: { "Content-Type": "application/json",
-                "ngrok-skip-browser-warning": "true"},
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     init_data: tg.initData, // Bot backendida tekshirish uchun
                     qr_text: decodedText

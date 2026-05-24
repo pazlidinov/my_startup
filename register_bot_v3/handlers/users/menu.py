@@ -17,7 +17,6 @@ MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 async def menu_for_all(call: CallbackQuery):
     await call.answer()
     await call.message.delete()
-    await call.message.answer(".", reply_markup=ReplyKeyboardRemove())
     user_type = call.data.split("_")[-1]
     if user_type == "client":
         return await call.message.answer_photo(
